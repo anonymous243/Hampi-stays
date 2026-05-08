@@ -1,0 +1,303 @@
+// ============================================================
+// ResortDetail Page — /resorts/:slug
+// Full resort detail: photo gallery, amenities, policies,
+// sticky booking widget, nearby attractions.
+// ============================================================
+
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  ArrowLeft, Star, MapPin, CheckCircle, XCircle,
+  Wifi, Coffee, Car, Dumbbell, Waves,
+} from "lucide-react";
+import { BookingWidget } from "../../components/resort/BookingWidget";
+import { AttractionsGuide } from "../../components/resort/AttractionsGuide";
+import { ResortMap } from "../../components/resort/ResortMap";
+import { cn } from "../../utils/cn";
+import type { Resort } from "../../types/resort";
+
+const AMENITY_ICON: Record<string, React.ReactNode> = {
+  WiFi: <Wifi className="w-5 h-5" />,
+  Restaurant: <Coffee className="w-5 h-5" />,
+  Parking: <Car className="w-5 h-5" />,
+  Gym: <Dumbbell className="w-5 h-5" />,
+  Pool: <Waves className="w-5 h-5" />,
+};
+
+export function ResortDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const [galleryIdx, setGalleryIdx] = useState(0);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [resort, setResort] = useState<Resort | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchResort = async () => {
+      if (!slug) return;
+      try {
+        setIsLoading(true);
+        const response = await fetch(`http://localhost:5000/api/resorts/${slug}`);
+        if (!response.ok) throw new Error('Resort not found');
+        const data = await response.json();
+
+        // Normalize backend schema to frontend types
+        const normalized: Resort = {
+          ...data,
+          location: {
+            area: data.locationArea,
+            district: "Hampi",
+            distanceFromCenterKm: 5, 
+            lat: data.locationLat,
+            lng: data.locationLng
+          },
+          policies: data.policies || {
+            checkIn: "2:00 PM",
+            checkOut: "11:00 AM",
+            minNights: 1,
+            petsAllowed: false,
+            cancellation: "Free cancellation 48h before check-in"
+          },
+          nearbyAttractions: data.nearbyAttractions || []
+        };
+        setResort(normalized);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResort();
+  }, [slug]);
+
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-sand-50">
+      <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!resort || error) return <Navigate to="/resorts" replace />;
+
+  const images = resort.images;
+  const checkIn = searchParams.get("checkIn") ?? undefined;
+  const checkOut = searchParams.get("checkOut") ?? undefined;
+  const adults = Number(searchParams.get("adults") ?? 2);
+
+  return (
+    <div className="min-h-screen bg-sand-50 pt-32">
+      <div className="container mx-auto px-4 md:px-6 pb-6 relative z-10">
+        <Link
+          to="/resorts"
+          className="inline-flex items-center gap-2 text-navy-950/60 hover:text-navy-900 font-semibold text-sm transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Resorts
+        </Link>
+      </div>
+
+      <div className="container mx-auto px-4 md:px-6 mb-8">
+        <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[420px] md:h-[560px] rounded-3xl overflow-hidden">
+          <div
+            className="col-span-4 md:col-span-2 row-span-2 relative cursor-pointer overflow-hidden"
+            onClick={() => setGalleryIdx(0)}
+          >
+            <img
+              src={images[galleryIdx] ?? images[0]}
+              alt={resort.name}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          {images.slice(1, 5).map((img: string, i: number) => (
+            <div
+              key={img}
+              className="hidden md:block relative cursor-pointer overflow-hidden"
+              onClick={() => setGalleryIdx(i + 1)}
+            >
+              <img
+                src={img}
+                alt={`${resort.name} photo ${i + 2}`}
+                className={`w-full h-full object-cover hover:scale-105 transition-transform duration-700 ${galleryIdx === i + 1 ? "ring-4 ring-gold-500" : ""}`}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 md:px-6 pb-24">
+        <div className="flex flex-col lg:flex-row gap-10">
+          <div className="flex-1 min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center gap-2 text-navy-950/50 mb-2">
+                <MapPin className="w-4 h-4 text-gold-500" />
+                <span className="text-sm font-medium">
+                  {resort.location?.area || (resort as any).locationArea || "Hampi"}, Hampi — {resort.location?.distanceFromCenterKm || 5} km from city centre
+                </span>
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-3 leading-tight">
+                {resort.name}
+              </h1>
+
+              <p className="text-lg text-gold-600 font-medium italic mb-4">{resort.tagline}</p>
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${i < Math.floor(resort.rating) ? "fill-gold-500 text-gold-500" : "text-stone-200"}`}
+                    />
+                  ))}
+                </div>
+                <span className="font-bold text-navy-950">{resort.rating}</span>
+                <span className="text-navy-950/50 text-sm">({resort.reviewCount} reviews)</span>
+                {resort.isVerified && (
+                  <div className="flex items-center gap-1 text-green-700 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                    <CheckCircle className="w-3.5 h-3.5" /> Verified
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            <section className="mb-10">
+              <h2 className="text-2xl font-bold font-serif text-navy-950 mb-4">About this property</h2>
+              <p className="text-navy-900 leading-relaxed text-lg">{resort.description}</p>
+            </section>
+
+            <section className="mb-10">
+              <h2 className="text-2xl font-bold font-serif text-navy-950 mb-5">What's included</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {resort.amenities.map((amenity: string) => (
+                  <div
+                    key={amenity}
+                    className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-sand-100 shadow-sm"
+                  >
+                    <span className="text-gold-500">
+                      {AMENITY_ICON[amenity] ?? <CheckCircle className="w-5 h-5" />}
+                    </span>
+                    <span className="text-navy-950 font-medium text-sm">{amenity}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="mb-10" id="rooms">
+              <h2 className="text-2xl font-bold font-serif text-navy-950 mb-6">Choose Your Stay</h2>
+              <div className="space-y-4">
+                {resort.roomTypes.map((room: any) => {
+                  const isSelected = selectedRoomId === room.id;
+                  return (
+                    <div
+                      key={room.id}
+                      className={cn(
+                        "group p-5 rounded-[2rem] border-2 transition-all duration-300 flex flex-col md:flex-row gap-6",
+                        isSelected 
+                          ? "bg-gold-50/50 border-gold-500 shadow-luxury" 
+                          : "bg-white border-sand-100 hover:border-gold-300"
+                      )}
+                    >
+                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0">
+                        <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <h4 className="text-lg font-bold text-navy-950 mb-1">{room.name}</h4>
+                            <p className="text-sm text-navy-950/60 mb-3">{room.description}</p>
+                            <div className="flex flex-wrap gap-2">
+                              {room.amenities.map((a: string) => (
+                                <span key={a} className="text-[10px] font-bold uppercase tracking-wider text-navy-950/40 bg-sand-50 px-2 py-0.5 rounded-md border border-sand-100">
+                                  {a}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-left md:text-right shrink-0">
+                            <div className="flex items-baseline gap-1 md:justify-end mb-2">
+                              <span className="text-2xl font-serif font-bold text-navy-950">₹{room.pricePerNight.toLocaleString("en-IN")}</span>
+                              <span className="text-sm text-navy-950/50">/night</span>
+                            </div>
+                            <button
+                              onClick={() => setSelectedRoomId(room.id)}
+                              className={cn(
+                                "px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300",
+                                isSelected
+                                  ? "bg-gold-600 text-white shadow-gold"
+                                  : "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950"
+                              )}
+                            >
+                              {isSelected ? "Selected" : "Select Room"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="mb-10">
+              <h2 className="text-2xl font-bold font-serif text-navy-950 mb-5">Property Rules</h2>
+              <div className="bg-white rounded-3xl border border-sand-100 p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold text-navy-800/40 uppercase tracking-widest mb-1">Check-in</p>
+                  <p className="font-semibold text-navy-950">{resort.policies.checkIn}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-navy-800/40 uppercase tracking-widest mb-1">Check-out</p>
+                  <p className="font-semibold text-navy-950">{resort.policies.checkOut}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-navy-800/40 uppercase tracking-widest mb-1">Min. Stay</p>
+                  <p className="font-semibold text-navy-950">{resort.policies.minNights} night{resort.policies.minNights !== 1 ? "s" : ""}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-navy-800/40 uppercase tracking-widest mb-1">Pets</p>
+                  <div className={`flex items-center gap-1.5 font-semibold ${resort.policies.petsAllowed ? "text-green-700" : "text-red-600"}`}>
+                    {resort.policies.petsAllowed
+                      ? <><CheckCircle className="w-4 h-4" /> Allowed</>
+                      : <><XCircle className="w-4 h-4" /> Not allowed</>
+                    }
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-xs font-bold text-navy-800/40 uppercase tracking-widest mb-1">Cancellation</p>
+                  <p className="text-navy-900">{resort.policies.cancellation}</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="mb-10">
+              <h2 className="text-2xl font-bold font-serif text-navy-950 mb-5">Location</h2>
+              <div className="h-64 rounded-3xl overflow-hidden border border-sand-200">
+                <ResortMap resorts={[resort]} className="w-full h-full" />
+              </div>
+            </section>
+
+            <AttractionsGuide attractions={resort.nearbyAttractions} />
+          </div>
+
+          <aside className="lg:w-96 flex-shrink-0">
+            <div className="sticky top-24">
+              <BookingWidget
+                resort={resort}
+                initialCheckIn={checkIn}
+                initialCheckOut={checkOut}
+                initialAdults={adults}
+                selectedRoomId={selectedRoomId}
+              />
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}

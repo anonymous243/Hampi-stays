@@ -1,12 +1,4 @@
-// ============================================================
-// useResorts — Filtered & Sorted Resort Hook
-// Single source of truth for applying filters + sort.
-// All filtering is client-side for now; swap getResorts() 
-// with an API call later without touching any component.
-// ============================================================
-
-import { useMemo } from "react";
-import { RESORTS } from "../data/resorts";
+import { useState, useEffect, useMemo } from "react";
 import type { Resort, FilterState, SortOption, SearchParams } from "../types/resort";
 
 interface UseResortsOptions {
@@ -26,19 +18,57 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 export function useResorts({ search, filters, sort = "popularity" }: UseResortsOptions = {}) {
+  const [allResorts, setAllResorts] = useState<Resort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchResorts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('http://localhost:5000/api/resorts');
+        if (!response.ok) throw new Error('Failed to fetch resorts');
+        const data = await response.json();
+        
+        // Map backend data to frontend types (Normalization)
+        const normalized = data.map((r: any) => ({
+          ...r,
+          location: {
+            area: r.locationArea,
+            district: "Hampi", // Backend doesn't have district yet
+            state: "Karnataka",
+            lat: r.locationLat,
+            lng: r.locationLng,
+            distanceFromCenterKm: 5 // Mocked for now
+          }
+        }));
+        
+        setAllResorts(normalized);
+      } catch (err: any) {
+        console.error("Fetch error:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResorts();
+  }, []);
+
   const f: FilterState = { ...DEFAULT_FILTERS, ...filters };
 
   const filtered = useMemo(() => {
-    return RESORTS.filter((resort) => {
-      // Text search (location name or resort name)
+    return allResorts.filter((resort) => {
+      // Text search
       if (search?.location) {
         const q = search.location.toLowerCase();
-        const haystack =
-          `${resort.name} ${resort.location.area} ${resort.location.district}`.toLowerCase();
+        // Backend uses 'locationArea' in schema, but mapping might be needed
+        const area = (resort as any).locationArea || resort.location?.area || "";
+        const haystack = `${resort.name} ${area}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
 
-      // Guest capacity: ensure at least one room can fit the party
+      // Guest capacity
       const totalGuests = (search?.adults ?? 0) + (search?.children ?? 0);
       if (totalGuests > 0) {
         const hasCapacity = resort.roomTypes.some((rt) => rt.capacity >= totalGuests);
@@ -50,7 +80,7 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
         return false;
       }
 
-      // Amenity filter (resort must have ALL selected amenities)
+      // Amenity filter
       if (f.amenities.length > 0) {
         const hasAll = f.amenities.every((a) => resort.amenities.includes(a));
         if (!hasAll) return false;
@@ -66,7 +96,7 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
 
       return true;
     });
-  }, [search, f]);
+  }, [allResorts, search, f]);
 
   const sorted = useMemo((): Resort[] => {
     const arr = [...filtered];
@@ -91,6 +121,8 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
     resorts: sorted,
     total: sorted.length,
     isEmpty: sorted.length === 0,
+    isLoading,
+    error,
     maxPrice: MAX_PRICE,
   };
 }

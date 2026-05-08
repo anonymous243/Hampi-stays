@@ -356,6 +356,10 @@ export const RESORTS: Resort[] = [
   },
 ];
 
+export function getResortById(id: string): Resort | undefined {
+  return RESORTS.find((r) => r.id === id);
+}
+
 // ============================================================
 // Utility: get one resort by slug
 // ============================================================

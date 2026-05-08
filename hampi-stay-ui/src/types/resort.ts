@@ -24,7 +24,12 @@ export type Amenity =
   | "Rooftop"
   | "Air Conditioning"
   | "Pet Friendly"
-  | "Airport Transfer";
+  | "Airport Transfer"
+  | "Breakfast Included"
+  | "Airport Shuttle"
+  | "Bonfire Night"
+  | "Laundry"
+  | "Library";
 
 export interface RoomType {
   id: string;

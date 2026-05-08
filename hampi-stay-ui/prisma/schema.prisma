@@ -1,0 +1,245 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  TRAVELLER
+  RESORT_OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          Role      @default(TRAVELLER)
+  avatar        String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  bookings      Booking[]
+  wishlist      Wishlist[]
+  reviews       Review[]
+  notifications Notification[]
+  ownerProfile  ResortOwner?
+
+  @@map("users")
+}
+
+enum ResortStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Resort {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  tagline         String
+  description     String
+  type            String   // luxury, eco, etc.
+  category        String?  // Heritage, Nature, Riverside, etc.
+  locationArea    String
+  locationLat     Float
+  locationLng     Float
+  images          String[]
+  amenities       String[]
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  pricePerNight   Float    // Starting price
+  isFeatured      Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  status          ResortStatus @default(PENDING)
+  houseRules      String[]
+  mealPackages    Json?    // Array of { name, price, description }
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  ownerId         String
+  owner           ResortOwner @relation(fields: [ownerId], references: [id])
+  roomTypes       Room[]
+  bookings        Booking[]
+  wishlist        Wishlist[]
+  reviews         Review[]
+  discountCodes   DiscountCode[]
+
+  @@map("resorts")
+}
+
+model Room {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  pricePerNight   Float
+  capacity        Int
+  amenities       String[]
+  images          String[]
+  availableCount  Int
+  minNights       Int      @default(1)
+  maxNights       Int      @default(30)
+
+  // Relations
+  resortId        String
+  resort          Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  priceOverrides  RoomPriceOverride[]
+  blockings       RoomBlocking[]
+
+  @@map("rooms")
+}
+
+model RoomPriceOverride {
+  id            String   @id @default(cuid())
+  date          DateTime
+  price         Float
+  minNights     Int?
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, date])
+  @@map("room_price_overrides")
+}
+
+model RoomBlocking {
+  id            String   @id @default(cuid())
+  date          DateTime
+  reason        String?  // Maintenance, Personal, etc.
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, date])
+  @@map("room_blockings")
+}
+
+model DiscountCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  percentage    Float?
+  flatAmount    Float?
+  minBookingAmt Float?
+  validFrom     DateTime
+  validUntil    DateTime
+  maxUses       Int?
+  usedCount     Int      @default(0)
+  
+  // Deal Logic
+  isEarlyBird   Boolean  @default(false)
+  minDaysInAdvance Int?
+  isLastMinute  Boolean  @default(false)
+  maxDaysInAdvance Int?
+
+  resortId      String
+  resort        Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@map("discount_codes")
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  checkIn          DateTime
+  checkOut         DateTime
+  guests           Int
+  totalPrice       Float
+  status           BookingStatus @default(PENDING)
+  specialRequests  String?
+  referenceNumber  String        @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  resortId         String
+  resort           Resort        @relation(fields: [resortId], references: [id])
+  roomId           String?       // Optional link to specific room type
+
+  @@map("bookings")
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resortId  String
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resortId])
+  @@map("wishlist")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @default(5)
+  comment   String?
+  images    String[]
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resortId  String
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   // info, booking, alert
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ResortOwner {
+  id              String   @id @default(cuid())
+  businessName    String?
+  gstNumber       String?
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resorts         Resort[]
+
+  @@map("resort_owners")
+}

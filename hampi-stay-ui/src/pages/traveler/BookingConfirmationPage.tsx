@@ -1,0 +1,361 @@
+import { useState } from "react";
+import { useLocation, Navigate, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CheckCircle, Calendar, Users,
+  Download, ArrowRight, Star, Home, MessageCircle
+} from "lucide-react";
+import { Button } from "../../components/ui/Button";
+import { cn } from "../../utils/cn";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+import QRCode from "qrcode";
+
+export function BookingConfirmationPage() {
+  const location = useLocation();
+  const state = location.state;
+
+  if (!state?.booking) return <Navigate to="/resorts" replace />;
+
+  const { booking, resortName, roomName, image, nights, grandTotal, guestName } = state;
+
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const handleDownloadInvoice = async () => {
+    const doc = new jsPDF();
+    
+    // Brand Colors
+    const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
+    const gold: [number, number, number] = [184, 134, 11]; // #B8860B
+
+    // 1. Header with Brand Identity
+    doc.setFillColor(navy[0], navy[1], navy[2]);
+    doc.rect(0, 0, 210, 50, 'F');
+    
+    // Decorative Gold Line
+    doc.setFillColor(gold[0], gold[1], gold[2]);
+    doc.rect(0, 50, 210, 2, 'F');
+
+    // Logo Representation (Text + Icon)
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("serif", "bold");
+    doc.setFontSize(26);
+    doc.text("HAMPISTAYS", 20, 30);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 200, 200);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+
+    // 2. Invoice Meta Info
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("BOOKING CONFIRMATION", 140, 25);
+    doc.setFont("helvetica", "normal");
+    doc.text(`REF: ${booking.referenceNumber}`, 140, 31);
+    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 37);
+
+    // 3. Main Content
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    
+    // Section: Guest Information
+    doc.setFontSize(14);
+    doc.setFont("serif", "bold");
+    doc.text("GUEST INFORMATION", 20, 70);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const cleanGuestName = guestName.replace(/_/g, ' ');
+    doc.text(`Primary Guest: ${cleanGuestName}`, 20, 78);
+    doc.text(`Booking Status: ${booking.status.toUpperCase()}`, 20, 83);
+    doc.text(`Transaction ID: TXN-${booking.id.substring(0, 10).toUpperCase()}`, 20, 88);
+
+    // Section: Resort Information
+    doc.setFontSize(14);
+    doc.setFont("serif", "bold");
+    doc.text("STAY DETAILS", 110, 70);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Resort: ${resortName}`, 110, 78);
+    doc.text(`Accommodation: ${roomName}`, 110, 83);
+    doc.text(`Duration: ${nights} Nights`, 110, 88);
+
+    // 4. Booking Itemized Table
+    autoTable(doc, {
+      startY: 100,
+      head: [['Description', 'Details']],
+      body: [
+        ['Check-in Date', new Date(booking.checkIn).toLocaleDateString("en-IN") + " (14:00 PM)"],
+        ['Check-out Date', new Date(booking.checkOut).toLocaleDateString("en-IN") + " (11:00 AM)"],
+        ['Guests', `${booking.guests} Adult(s)`],
+        ['Room Type', roomName],
+        ['Total Amount Paid', `INR ${grandTotal.toLocaleString("en-IN")}`],
+      ],
+      headStyles: { 
+        fillColor: navy, 
+        textColor: [255, 255, 255], 
+        fontStyle: 'bold',
+        fontSize: 11,
+        halign: 'center'
+      },
+      bodyStyles: { 
+        fontSize: 10,
+        cellPadding: 6
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', textColor: [80, 80, 80], cellWidth: 60 },
+        1: { halign: 'left' }
+      },
+      alternateRowStyles: { fillColor: [252, 250, 245] },
+      margin: { left: 20, right: 20 },
+      theme: 'grid'
+    });
+
+    // 5. QR Code for Check-in
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tableFinalY = (doc as any).lastAutoTable.finalY;
+    
+    doc.setFont("serif", "bold");
+    doc.setFontSize(12);
+    doc.text("CHECK-IN VERIFICATION", 140, tableFinalY + 20);
+    
+    try {
+      const qrData = `Verification: ${booking.referenceNumber} | Guest: ${cleanGuestName} | Resort: ${resortName}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+        margin: 2,
+        width: 150,
+        color: {
+          dark: '#0A0F1E',
+          light: '#FFFFFF'
+        }
+      });
+      doc.addImage(qrCodeDataUrl, 'PNG', 140, tableFinalY + 24, 40, 40);
+    } catch (err) {
+      console.error("QR Generation failed", err);
+    }
+
+    // 6. Policy & Assistance
+    const policyY = tableFinalY + 20;
+
+    doc.setFont("serif", "bold");
+    doc.setFontSize(12);
+    doc.text("IMPORTANT INFORMATION", 20, policyY);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const policies = [
+      "• Please present a valid Government ID (Aadhar/Passport) at the time of check-in.",
+      "• Cancellation Policy: Free cancellation up to 48 hours prior to arrival.",
+      "• Standard check-in is 2:00 PM and check-out is 11:00 AM.",
+      "• HampiStays is a plastic-free sanctuary. We appreciate your cooperation."
+    ];
+    policies.forEach((p, i) => doc.text(p, 20, policyY + 8 + (i * 5)));
+
+    // 7. Footer
+    doc.setFillColor(245, 245, 245);
+    doc.rect(0, 270, 210, 27, 'F');
+    
+    doc.setFont("serif", "italic");
+    doc.setFontSize(11);
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.text("Thank you for choosing HampiStays. We look forward to hosting you.", 105, 280, { align: 'center' });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("HampiStays Headquarters: Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, 286, { align: 'center' });
+
+    doc.save(`HampiStays_Confirmation_${booking.referenceNumber}.pdf`);
+  };
+
+  const handleWhatsAppShare = () => {
+    const message = `*HampiStays Booking Confirmation*%0A%0A` +
+      `*Reference:* ${booking.referenceNumber}%0A` +
+      `*Resort:* ${resortName}%0A` +
+      `*Room:* ${roomName}%0A` +
+      `*Dates:* ${new Date(booking.checkIn).toLocaleDateString("en-IN")} to ${new Date(booking.checkOut).toLocaleDateString("en-IN")}%0A` +
+      `*Total Paid:* ₹${grandTotal.toLocaleString("en-IN")}%0A%0A` +
+      `Looking forward to hosting you!`;
+    
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-sand-50 to-gold-50/30 pt-28 pb-24">
+      <div className="container mx-auto px-4 max-w-3xl">
+        {/* Success Animation */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          className="text-center mb-12"
+        >
+          <div className="w-28 h-28 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-green-200 shadow-xl">
+            <CheckCircle className="w-16 h-16 text-green-600" />
+          </div>
+          <h1 className="text-5xl font-serif font-bold text-navy-950 mb-4">
+            You're All Set!
+          </h1>
+          <p className="text-xl text-navy-950/60 max-w-lg mx-auto leading-relaxed">
+            Your stay at <span className="font-bold text-navy-950">{resortName}</span> is confirmed. 
+            Get ready for an unforgettable Hampi experience.
+          </p>
+        </motion.div>
+
+        {/* Booking Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-luxury mb-8"
+        >
+          {/* Resort Image Banner */}
+          <div className="relative h-48 overflow-hidden">
+            <img src={image} alt={resortName} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 to-transparent" />
+            <div className="absolute bottom-6 left-8">
+              <span className="px-4 py-2 bg-green-500 text-white text-xs font-bold uppercase tracking-widest rounded-full shadow-lg">
+                ✓ Confirmed
+              </span>
+            </div>
+          </div>
+
+          <div className="p-10">
+            {/* Reference */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-8 border-b border-sand-100">
+              <div>
+                <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest mb-1">Booking Reference</p>
+                <p className="text-3xl font-bold font-mono text-gold-700 tracking-wider">{booking.referenceNumber}</p>
+              </div>
+              <div className="text-left md:text-right">
+                <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest mb-1">Total Paid</p>
+                <p className="text-3xl font-bold text-navy-950">₹{grandTotal.toLocaleString("en-IN")}</p>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+              {[
+                { icon: Home, label: "Resort", value: resortName, sub: roomName },
+                {
+                  icon: Calendar,
+                  label: "Check-in",
+                  value: new Date(booking.checkIn).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }),
+                  sub: "From 2:00 PM"
+                },
+                {
+                  icon: Calendar,
+                  label: "Check-out",
+                  value: new Date(booking.checkOut).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }),
+                  sub: "By 11:00 AM"
+                },
+                { icon: Users, label: "Guests", value: `${booking.guests} Adults`, sub: `${nights} Night${nights > 1 ? "s" : ""}` },
+              ].map(item => (
+                <div key={item.label} className="p-5 bg-sand-50 rounded-2xl border border-sand-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <item.icon className="w-4 h-4 text-gold-500" />
+                    <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">{item.label}</p>
+                  </div>
+                  <p className="font-bold text-navy-950 text-sm">{item.value}</p>
+                  <p className="text-xs text-navy-950/40 mt-0.5">{item.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* What's Next */}
+            <div className="p-6 bg-navy-950 text-white rounded-2xl">
+              <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">What happens next?</p>
+              <ol className="space-y-2 text-sm">
+                <li className="flex items-start gap-3"><span className="w-5 h-5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>A confirmation is saved to your bookings dashboard.</li>
+                <li className="flex items-start gap-3"><span className="w-5 h-5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>The resort team will prepare your personalized welcome.</li>
+                <li className="flex items-start gap-3"><span className="w-5 h-5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>After your stay, share your experience with a review.</li>
+              </ol>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="flex flex-col md:flex-row gap-4"
+        >
+          <Button size="lg" className="flex-1 rounded-2xl shadow-gold gap-2" onClick={handleDownloadInvoice}>
+            <Download className="w-5 h-5" />
+            Download Invoice
+          </Button>
+          <Button variant="outline" size="lg" className="flex-1 rounded-2xl gap-2 border-green-500 text-green-600 hover:bg-green-50" onClick={handleWhatsAppShare}>
+            <MessageCircle className="w-5 h-5" />
+            Share to WhatsApp
+          </Button>
+          <Link to="/dashboard/bookings" className="flex-1">
+            <Button variant="outline" size="lg" className="w-full rounded-2xl gap-2">
+              <Calendar className="w-5 h-5" />
+              View My Bookings
+            </Button>
+          </Link>
+          <Link to="/resorts">
+            <Button variant="outline" size="lg" className="w-full rounded-2xl gap-2">
+              Explore More
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </Link>
+        </motion.div>
+
+        {/* Review Prompt */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="mt-8 p-10 bg-white border border-sand-100 rounded-[3rem] shadow-sm text-center"
+        >
+          <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em] mb-6">Rate your booking experience</p>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <motion.button
+                key={i}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                onMouseEnter={() => setHoverRating(i)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => setRating(i)}
+                className="transition-colors duration-200"
+              >
+                <Star 
+                  className={cn(
+                    "w-10 h-10 transition-all duration-300",
+                    (hoverRating || rating) >= i 
+                      ? "fill-gold-500 text-gold-500 scale-110 drop-shadow-md" 
+                      : "text-sand-200 fill-sand-100"
+                  )} 
+                />
+              </motion.button>
+            ))}
+          </div>
+          <AnimatePresence mode="wait">
+            {rating > 0 ? (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-gold-700 font-serif italic text-lg"
+              >
+                {rating === 5 ? "✨ You're wonderful! Thank you for the 5 stars." : "Thank you for your feedback!"}
+              </motion.p>
+            ) : (
+              <p className="text-sm text-navy-950/60 leading-relaxed max-w-sm mx-auto">
+                How easy was it to secure your stay? <br />
+                Your feedback helps us refine the HampiStays experience.
+              </p>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
