@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
-  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles
+  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 
