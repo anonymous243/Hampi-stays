@@ -86,14 +86,14 @@
 ## 🟠 PHASE 6 — Resort Owner: Availability & Pricing Management
 > Goal: Resort owners can manage rooms, pricing, and calendar
 
-- [ ] Set seasonal pricing (peak season, weekends, holidays)
-- [ ] Mark rooms as available / unavailable
-- [ ] Block specific dates (maintenance, personal use)
-- [ ] Set minimum / maximum stay nights
-- [ ] Create discount codes (% off or flat off)
-- [ ] Set early-bird or last-minute deals
-- [ ] Google Calendar sync for availability
-- [ ] Real-time availability reflected for travellers
+- ✅ Set seasonal pricing (peak season, weekends, holidays)
+- ✅ Mark rooms as available / unavailable
+- ✅ Block specific dates (maintenance, personal use)
+- ✅ Set minimum / maximum stay nights
+- ✅ Create discount codes (% off or flat off)
+- ✅ Set early-bird or last-minute deals
+- ✅ Google Calendar sync for availability (Simulated)
+- ✅ Real-time availability reflected for travellers
 
 ---
 
@@ -332,7 +332,30 @@
 
 ---
 
-> ⏳ **Phase 1 Progress: 75% Complete.** Authentication and Role-based systems are live.
-> ✅ **Phase 2 Complete.** Search & Discovery fully implemented — SearchBar, Date Picker, Guest Counter, Resort Listing, Filters, Sort, Map View (Leaflet), Resort Detail, Availability Check, Compare Tool, Nearby Attractions Guide.
-> 🔜 **Phase 3 Next.** Booking Flow & Payments.
+> ✅ **Phase 1 Complete.** Foundation & Dual Role Auth.
+> ✅ **Phase 2 Complete.** Search & Discovery fully implemented.
+> ✅ **Phase 3 Complete.** Booking Flow & Payments.
+> ✅ **Phase 4 Complete.** Dashboard & Profile.
+> ✅ **Phase 5 Complete.** Property Setup & Onboarding.
+> ✅ **Phase 6 Complete.** Availability & Pricing Management — Seasonal rates, blockings, min nights, and dynamic traveller pricing are live.
+> 🔜 **Phase 7 Next.** Booking & Guest Management.
+
+---
+
+## 💎 PHASE 13 — Local Experiences & Expert Network
+> Goal: Connect travellers with Hampi's local expertise (Guides, Bouldering, Coracle)
+
+### 🏺 Guide Expert Network
+- [ ] New Role: **Local Guide** (Architecture, History, Nature)
+- [ ] Guide Registration & Profile (specialty, languages, day rates, certifications)
+- [ ] Guide Marketplace (browse guides by expertise and reviews)
+- [ ] Post-booking notification for travellers (nudge to hire a guide)
+- [ ] Guide Booking system (integrated with trip dates)
+- [ ] Secure payment split (Guide payout - platform fee)
+- [ ] Verified Badge for official Archaeological Survey of India (ASI) guides
+
+### 🚣 Activities & Adventures
+- [ ] Coracle Boat ride bookings (Riverside experiences)
+- [ ] Bouldering & Trekking expert connects
+- [ ] Evening Ritual Tours (Sunset at Hemakuta Hill)
 

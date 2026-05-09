@@ -1,21 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { ArrowLeft, Luggage, Key, Check } from "lucide-react";
+import { ArrowLeft, Luggage, Key, Check, Users } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 
-type UserRole = "guest" | "owner" | null;
+// GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
+
+type UserRole = "guest" | "owner" | "guide" | null;
 
 export function RegisterPage() {
   const [role, setRole] = useState<UserRole>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => setGuideServiceEnabled(data.guideServiceEnabled))
+      .catch(err => console.error(err));
+  }, []);
   
   const hampiImages = [
     "/images/hampi-1.png", // Stone Chariot
@@ -50,6 +61,13 @@ export function RegisterPage() {
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
+
+    // Password Strength Check
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{9,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      return setError("Password must be at least 9 characters and include at least one special character.");
+    }
+
     if (!formData.terms) {
       return setError("You must agree to the terms");
     }
@@ -57,11 +75,24 @@ export function RegisterPage() {
     setError("");
     setIsLoading(true);
     try {
-      const apiRole = role === "guest" ? "TRAVELLER" : "RESORT_OWNER";
+      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
       await register(formData.name, formData.email, formData.password, apiRole as any);
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onGoogleSuccess = async (response: any) => {
+    setIsLoading(true);
+    setError("");
+    try {
+      await loginWithGoogle(response.credential);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Google login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +246,53 @@ export function RegisterPage() {
                         </motion.div>
                       )}
                     </div>
+
+                    {/* Local Guide Card */}
+                    {guideServiceEnabled && (
+                      <div
+                        onClick={() => setRole("guide")}
+                        className={cn(
+                          "p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 relative overflow-hidden group bg-sand-50/50 backdrop-blur-sm",
+                          role === "guide"
+                            ? "border-navy-500 shadow-luxury scale-[1.02]"
+                            : "border-sand-200 hover:border-navy-300 hover:bg-sand-100/80"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={cn(
+                              "w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
+                              role === "guide"
+                                ? "bg-navy-100 text-navy-600"
+                                : "bg-sand-100 text-navy-800/40 group-hover:bg-navy-50 group-hover:text-navy-500"
+                            )}
+                          >
+                            <span className="flex-shrink-0"><Users className="w-6 h-6" /></span>
+                          </div>
+                          <div>
+                            <h3
+                              className={cn(
+                                "font-bold text-base transition-colors",
+                                role === "guide" ? "text-navy-700" : "text-navy-950"
+                              )}
+                            >
+                              Local Expert / Guide
+                            </h3>
+                            <p className="text-sm text-navy-800/60 leading-snug">
+                              I want to offer tours and local expertise.
+                            </p>
+                          </div>
+                        </div>
+                        {role === "guide" && (
+                          <motion.div
+                            layoutId="check3"
+                            className="absolute top-4 right-4 text-navy-500"
+                          >
+                            <Check className="w-5 h-5" />
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
                   </motion.div>
 
                   <motion.div variants={itemVariant}>
@@ -225,6 +303,8 @@ export function RegisterPage() {
                           ? "bg-gold-500 hover:bg-gold-400 text-navy-950"
                           : role === "owner"
                           ? "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950"
+                          : role === "guide"
+                          ? "bg-navy-900 hover:bg-navy-950 text-white"
                           : "bg-sand-200 pointer-events-none text-navy-800/40 shadow-none"
                       )}
                       onClick={handleNext}
@@ -262,7 +342,7 @@ export function RegisterPage() {
                       Create Account
                     </h1>
                     <p className="text-navy-800/60 font-medium text-sm">
-                      As a {role === "guest" ? "Premium Traveler" : "Resort Partner"}
+                      As a {role === "guest" ? "Premium Traveler" : role === "owner" ? "Resort Partner" : "Local Expert"}
                     </p>
                     {error && <p className="text-red-500 text-sm font-bold mt-4 bg-red-50 p-3 rounded-xl border border-red-100">{error}</p>}
                   </motion.div>
@@ -293,6 +373,7 @@ export function RegisterPage() {
                     <Input
                       label="Password"
                       type="password"
+                      hint="Min. 9 characters + special character"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
@@ -302,6 +383,7 @@ export function RegisterPage() {
                     <Input
                       label="Confirm Password"
                       type="password"
+                      hint="Must match the password above"
                       value={formData.confirmPassword}
                       onChange={(e) =>
                         setFormData({
@@ -342,12 +424,36 @@ export function RegisterPage() {
                         "w-full h-14 text-lg mt-4",
                         role === "guest"
                           ? "bg-gold-500 hover:bg-gold-400 text-navy-950"
-                          : "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950"
+                          : role === "owner"
+                          ? "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950"
+                          : "bg-navy-900 hover:bg-navy-950 text-white"
                       )}
                     >
                       Create Account
                     </Button>
                   </motion.form>
+
+                  <motion.div variants={itemVariant} className="mt-8">
+                    <div className="relative flex items-center py-4">
+                      <div className="flex-grow border-t border-sand-200"></div>
+                      <span className="flex-shrink-0 mx-4 text-navy-800/40 text-[10px] font-bold uppercase tracking-[0.2em]">Or join with</span>
+                      <div className="flex-grow border-t border-sand-200"></div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 mt-4">
+                      <div className="flex justify-center">
+                        <GoogleLogin
+                          onSuccess={onGoogleSuccess}
+                          onError={() => setError("Google login failed")}
+                          theme="filled_blue"
+                          shape="pill"
+                          size="large"
+                          text="signup_with"
+                          width="100%"
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
 
                   <motion.div variants={itemVariant} className="text-center mt-6">
                     <p className="text-navy-800/60 font-medium text-sm">

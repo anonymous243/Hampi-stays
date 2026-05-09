@@ -5,6 +5,15 @@ import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || "H";
+};
+
 export function ProfilePage() {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -47,14 +56,16 @@ export function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-[2.5rem] p-8 border border-sand-100 shadow-sm text-center">
               <div className="relative w-32 h-32 mx-auto mb-6">
-                <div className="w-full h-full rounded-full bg-navy-950 flex items-center justify-center text-white text-4xl font-bold overflow-hidden border-4 border-sand-50">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-navy-950 to-navy-800 flex items-center justify-center text-white font-serif overflow-hidden border-4 border-white shadow-xl">
                   {formData.avatar ? (
                     <img src={formData.avatar} alt={formData.name} className="w-full h-full object-cover" />
                   ) : (
-                    formData.name.charAt(0).toUpperCase()
+                    <span className="text-4xl font-bold tracking-tighter">
+                      {getInitials(formData.name)}
+                    </span>
                   )}
                 </div>
-                <button className="absolute bottom-0 right-0 w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center text-navy-950 border-4 border-white shadow-lg hover:scale-110 transition-transform">
+                <button className="absolute bottom-0 right-0 w-10 h-10 bg-navy-950 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg hover:scale-110 transition-transform">
                   <Camera className="w-5 h-5" />
                 </button>
               </div>

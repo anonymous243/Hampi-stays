@@ -8,8 +8,9 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "../../utils/cn";
+import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 
 export function OwnerDashboard() {
   const { user } = useAuth();
@@ -27,6 +28,8 @@ export function OwnerDashboard() {
     availableCount: "1"
   });
   const [isUpdatingResortPhotos, setIsUpdatingResortPhotos] = useState(false);
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
   const [showBookingsModal, setShowBookingsModal] = useState(false);
 
   const fetchResorts = async () => {
@@ -100,6 +103,41 @@ export function OwnerDashboard() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleDownloadInvoice = (booking: any) => {
+    const content = `
+HAMPISTAYS — BUSINESS INVOICE
+================================
+Booking Reference: ${booking.referenceNumber}
+Date Issued: ${new Date().toLocaleDateString("en-IN")}
+
+GUEST: ${booking.user?.name}
+EMAIL: ${booking.user?.email}
+
+PROPERTY: ${resort.name}
+LOCATION: ${resort.locationArea}, Hampi
+
+BOOKING DETAILS
+Check-in: ${new Date(booking.checkIn).toLocaleDateString("en-IN")}
+Check-out: ${new Date(booking.checkOut).toLocaleDateString("en-IN")}
+Guests: ${booking.guests}
+Status: ${booking.status}
+
+FINANCIAL SUMMARY
+Total Revenue: ₹${booking.totalPrice?.toLocaleString("en-IN")}
+GST (Included): 12%
+Net Payout (Est): ₹${(booking.totalPrice * 0.93).toLocaleString("en-IN")} (7% Commission Deducted)
+
+Verified by HampiStays Partner Network.
+    `.trim();
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Invoice_${booking.referenceNumber}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject') => {
@@ -179,6 +217,8 @@ export function OwnerDashboard() {
           </div>
         )}
 
+        <ProfileIncompleteBanner />
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
@@ -197,18 +237,18 @@ export function OwnerDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" className="rounded-xl border-sand-200" onClick={() => navigate("/dashboard/inventory")}>
+            <Button variant="outline" className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap" onClick={() => navigate("/dashboard/inventory")}>
               <CalIcon className="w-4 h-4 mr-2" /> Manage Pricing
             </Button>
-            <Button variant="outline" className="rounded-xl border-sand-200">
+            <Button variant="outline" className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap">
               <Settings className="w-4 h-4 mr-2" /> Settings
             </Button>
-            <Button className="rounded-xl shadow-gold" onClick={() => navigate("/dashboard/resort-setup")}>
+            <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
             </Button>
             <Button 
               variant="outline" 
-              className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+              className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 whitespace-nowrap"
               onClick={async () => {
                 if (window.confirm("Are you sure you want to permanently delete this resort and all its data? This cannot be undone.")) {
                   try {
@@ -261,140 +301,307 @@ export function OwnerDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Room Inventory */}
-          <div className="lg:col-span-8 space-y-10">
-            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-serif font-bold text-navy-950">Room Inventory</h2>
-                  <p className="text-sm text-navy-950/40 mt-1">Manage your room types, pricing and availability.</p>
-                </div>
-                <Button size="sm" className="rounded-xl px-5" onClick={() => setShowAddRoom(true)}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Room Type
-                </Button>
+        {/* Daily Activity Tracker */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Arrivals Today */}
+          <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-sand-100 bg-green-50/30 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-serif font-bold text-navy-950">Today's Arrivals</h3>
+                <p className="text-xs text-green-700 font-bold uppercase tracking-widest mt-1">Checking in Today</p>
               </div>
-
-              <div className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {resort.roomTypes?.map((room: any) => (
-                    <div key={room.id} className="p-6 rounded-[2.5rem] border-2 border-sand-50 bg-sand-50/30 hover:border-gold-200 transition-all group">
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="text-xl font-bold text-navy-950">{room.name}</h4>
-                        <span className="text-gold-600 font-bold">₹{room.pricePerNight?.toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 italic">{room.description}</p>
-                      <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-navy-950/40">
-                        <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Max {room.capacity}</span>
-                        <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> {room.availableCount} Available</span>
-                      </div>
-                      
-                      {/* Room Photos Manager */}
-                      <div className="mt-6 pt-6 border-t border-sand-100">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-navy-950/30 mb-3">Room Gallery</p>
-                        <div className="flex flex-wrap gap-2">
-                          {room.images?.map((img: string, i: number) => (
-                            <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group/img">
-                              <img src={img} className="w-full h-full object-cover" />
-                              <button className="absolute inset-0 bg-red-600/60 opacity-0 group-img/img:opacity-100 flex items-center justify-center transition-opacity">
-                                <Trash2 className="w-4 h-4 text-white" />
-                              </button>
-                            </div>
-                          ))}
-                          <label className="w-16 h-16 rounded-lg border-2 border-dashed border-sand-200 flex items-center justify-center text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
-                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              const reader = new FileReader();
-                              reader.onloadend = async () => {
-                                try {
-                                  const r1 = await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ url: reader.result as string })
-                                  });
-                                  if (r1.ok) {
-                                    fetchResorts();
-                                  } else {
-                                    if (r1.status === 413) {
-                                      alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image.");
-                                    } else {
-                                      alert("Failed to upload room photo. Server returned status: " + r1.status);
-                                    }
-                                  }
-                                } catch(err) {
-                                  alert("Network error: Make sure your backend server is running on port 5000!");
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }} />
-                            <Plus className="w-5 h-5" />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="w-12 h-12 rounded-2xl bg-white border border-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                <CalendarCheck className="w-6 h-6" />
               </div>
             </div>
-
-            {/* Property Gallery */}
-            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold font-serif text-navy-950">Property Gallery</h3>
-                  <p className="text-sm text-navy-950/40 mt-1">Manage the high-resolution photos shown to guests.</p>
-                </div>
-                <div className="flex gap-2">
-                  <label className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors bg-navy-950 text-white hover:bg-navy-900/90 h-10 px-4 cursor-pointer disabled:opacity-50 disabled:pointer-events-none">
-                    <input type="file" accept="image/*" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setIsUpdatingResortPhotos(true);
-                      const reader = new FileReader();
-                      reader.onloadend = async () => {
-                        try {
-                          const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}/photos`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ url: reader.result as string })
-                          });
-                          if (res.ok) {
-                            fetchResorts();
-                          } else {
-                            if (res.status === 413) {
-                              alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image (under 100kb).");
-                            } else {
-                              alert("Failed to upload image. Server returned status: " + res.status);
-                            }
-                          }
-                        } catch(err) {
-                          alert("Network error: Make sure your backend server is running on port 5000!");
-                        } finally {
-                          setIsUpdatingResortPhotos(false);
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }} />
-                    {isUpdatingResortPhotos ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Add Photo"}
-                  </label>
-                </div>
-              </div>
-              <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                {resort.images?.map((img: string, i: number) => (
-                  <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden group/gallery">
-                    <img src={img} className="w-full h-full object-cover" />
-                    <button onClick={() => handleDeletePhoto(resort.id, img)} className="absolute top-2 right-2 p-2 bg-white/90 rounded-full text-red-500 opacity-0 group-gallery/gallery:opacity-100 transition-all hover:bg-red-500 hover:text-white">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+            <div className="p-8 space-y-4">
+              {resort?.bookings?.filter((b: any) => {
+                const today = new Date().toDateString();
+                return new Date(b.checkIn).toDateString() === today && b.status !== 'CANCELLED';
+              }).length > 0 ? (
+                resort.bookings.filter((b: any) => {
+                  const today = new Date().toDateString();
+                  return new Date(b.checkIn).toDateString() === today && b.status !== 'CANCELLED';
+                }).map((booking: any) => (
+                  <div key={booking.id} className="flex items-center justify-between p-5 rounded-2xl bg-sand-50/50 border border-sand-100 hover:border-green-300 transition-all group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
+                        {booking.user?.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
+                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • {booking.status}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setShowBookingsModal(true)} className="h-8 rounded-lg text-[10px] px-3">Details</Button>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-navy-950/30 italic text-sm font-medium">No arrivals scheduled for today.</div>
+              )}
             </div>
           </div>
 
-          {/* Side Panel: Recent Bookings & Meals */}
-          <div className="lg:col-span-4 space-y-10">
+          {/* Departures Today */}
+          <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-sand-100 bg-red-50/30 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-serif font-bold text-navy-950">Today's Departures</h3>
+                <p className="text-xs text-red-700 font-bold uppercase tracking-widest mt-1">Checking out Today</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white border border-red-100 flex items-center justify-center text-red-600 shadow-sm">
+                <ChevronRight className="rotate-180 w-6 h-6" />
+              </div>
+            </div>
+            <div className="p-8 space-y-4">
+              {resort?.bookings?.filter((b: any) => {
+                const today = new Date().toDateString();
+                return new Date(b.checkOut).toDateString() === today && b.status !== 'CANCELLED';
+              }).length > 0 ? (
+                resort.bookings.filter((b: any) => {
+                  const today = new Date().toDateString();
+                  return new Date(b.checkOut).toDateString() === today && b.status !== 'CANCELLED';
+                }).map((booking: any) => (
+                  <div key={booking.id} className="flex items-center justify-between p-5 rounded-2xl bg-sand-50/50 border border-sand-100 hover:border-red-300 transition-all group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
+                        {booking.user?.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
+                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{booking.guests} Guests • Room {booking.id.slice(-4).toUpperCase()}</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-8 rounded-lg text-[10px] px-3 border-red-200 text-red-600 hover:bg-red-50">Invoice</Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-navy-950/30 italic text-sm font-medium">No departures scheduled for today.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Content Area */}
+          <div className={cn("lg:col-span-8 space-y-10", activeTab === "overview" ? "block" : "hidden lg:block")}>
+            {(activeTab === "overview" || activeTab === "properties") && (
+              <>
+                {/* Room Inventory */}
+                <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+                  <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-serif font-bold text-navy-950">Room Inventory</h2>
+                      <p className="text-sm text-navy-950/40 mt-1">Manage your room types, pricing and availability.</p>
+                    </div>
+                    <Button size="sm" className="rounded-xl px-5" onClick={() => setShowAddRoom(true)}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Room Type
+                    </Button>
+                  </div>
+
+                  <div className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {resort.roomTypes?.map((room: any) => (
+                        <div key={room.id} className="p-6 rounded-[2.5rem] border-2 border-sand-50 bg-sand-50/30 hover:border-gold-200 transition-all group">
+                          <div className="flex items-start justify-between mb-4">
+                            <h4 className="text-xl font-bold text-navy-950">{room.name}</h4>
+                            <span className="text-gold-600 font-bold">₹{room.pricePerNight?.toLocaleString()}</span>
+                          </div>
+                          <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 italic">{room.description}</p>
+                          <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-navy-950/40">
+                            <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Max {room.capacity}</span>
+                            <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> {room.availableCount} Available</span>
+                          </div>
+                          
+                          {/* Room Photos Manager */}
+                          <div className="mt-6 pt-6 border-t border-sand-100">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-navy-950/30 mb-3">Room Gallery</p>
+                            <div className="flex flex-wrap gap-2">
+                              {room.images?.map((img: string, i: number) => (
+                                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
+                                  <img src={img} className="w-full h-full object-cover" />
+                                  <button 
+                                    onClick={async () => {
+                                      if (window.confirm("Delete this room photo?")) {
+                                        try {
+                                          await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                            method: "DELETE",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ url: img })
+                                          });
+                                          fetchResorts();
+                                        } catch (err) { alert("Error deleting photo"); }
+                                      }
+                                    }}
+                                    className="absolute inset-0 bg-red-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-white" />
+                                  </button>
+                                </div>
+                              ))}
+                              <label className="w-16 h-16 rounded-lg border-2 border-dashed border-sand-200 flex items-center justify-center text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
+                                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const reader = new FileReader();
+                                  reader.onloadend = async () => {
+                                    try {
+                                      const r1 = await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ url: reader.result as string })
+                                      });
+                                      if (r1.ok) {
+                                        fetchResorts();
+                                      } else {
+                                        if (r1.status === 413) {
+                                          alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image.");
+                                        } else {
+                                          alert("Failed to upload room photo. Server returned status: " + r1.status);
+                                        }
+                                      }
+                                    } catch(err) {
+                                      alert("Network error: Make sure your backend server is running on port 5000!");
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }} />
+                                <Plus className="w-5 h-5" />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property Gallery */}
+                <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+                  <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold font-serif text-navy-950">Property Gallery</h3>
+                      <p className="text-sm text-navy-950/40 mt-1">Manage the high-resolution photos shown to guests.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <label className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors bg-navy-950 text-white hover:bg-navy-900/90 h-10 px-4 cursor-pointer disabled:opacity-50 disabled:pointer-events-none">
+                        <input type="file" accept="image/*" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUpdatingResortPhotos(true);
+                          const reader = new FileReader();
+                          reader.onloadend = async () => {
+                            try {
+                              const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}/photos`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ url: reader.result as string })
+                              });
+                              if (res.ok) {
+                                fetchResorts();
+                              } else {
+                                if (res.status === 413) {
+                                  alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image (under 100kb).");
+                                } else {
+                                  alert("Failed to upload image. Server returned status: " + res.status);
+                                }
+                              }
+                            } catch(err) {
+                              alert("Network error: Make sure your backend server is running on port 5000!");
+                            } finally {
+                              setIsUpdatingResortPhotos(false);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }} />
+                        {isUpdatingResortPhotos ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Add Photo"}
+                      </label>
+                    </div>
+                  </div>
+                  <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {resort.images?.map((img: string, i: number) => (
+                      <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden group">
+                        <img src={img} className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => {
+                            if (window.confirm("Delete this property photo?")) {
+                              handleDeletePhoto(resort.id, img);
+                            }
+                          }} 
+                          className="absolute top-3 right-3 p-2.5 bg-white/90 rounded-xl text-red-500 shadow-lg transition-all hover:bg-red-500 hover:text-white"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === "bookings" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-serif font-bold text-navy-950">Manage Bookings</h2>
+                </div>
+                <div className="space-y-4">
+                  {(resort.bookings || []).length > 0 ? (
+                    (resort.bookings || []).map((booking: any) => (
+                      <div key={booking.id} className="flex items-center justify-between p-6 rounded-[2rem] border border-sand-50 bg-sand-50/30">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
+                            {booking.user?.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-navy-950">{booking.user?.name}</p>
+                            <p className="text-xs text-navy-950/40 uppercase tracking-widest">
+                              {new Date(booking.checkIn).toLocaleDateString()} — {booking.guests} Guests
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex flex-col items-end gap-2">
+                          <span className={cn("px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                            booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
+                            booking.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-100" :
+                            "bg-gold-50 text-gold-700 border-gold-100")}>
+                            {booking.status}
+                          </span>
+                          {booking.status === "PENDING" && (
+                            <div className="flex gap-2 mt-2">
+                              <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="bg-green-600 hover:bg-green-700">Accept</Button>
+                              <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="border-red-200 text-red-600 hover:bg-red-50">Reject</Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-20 text-navy-950/30 italic">No bookings yet.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
+                <h2 className="text-2xl font-serif font-bold text-navy-950 mb-8">Business Settings</h2>
+                <div className="space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
+                    <Input label="Business Name" value={resort.name} readOnly />
+                    <Input label="GST Number" placeholder="Not set" />
+                  </div>
+                  <Input label="Business Email" value={user?.email} readOnly />
+                  <div className="pt-4">
+                    <Button className="rounded-2xl px-10">Save Changes</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Side Panel */}
+          <div className={cn("lg:col-span-4 space-y-10", (activeTab !== "overview" && activeTab !== "properties") ? "hidden lg:block" : "block")}>
             {/* Recent Activity */}
             <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
               <div className="flex items-center justify-between mb-8">
@@ -482,47 +689,107 @@ export function OwnerDashboard() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm" onClick={() => setShowBookingsModal(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white rounded-[3rem] p-8 md:p-12 max-w-2xl w-full shadow-luxury max-h-[80vh] flex flex-col">
+              className="relative bg-white rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-luxury max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between mb-8 shrink-0">
-                <h2 className="text-3xl font-serif font-bold text-navy-950">All Bookings</h2>
-                <button onClick={() => setShowBookingsModal(false)} className="w-10 h-10 bg-sand-50 rounded-full flex items-center justify-center text-navy-950/40 hover:bg-gold-50 hover:text-gold-600 transition-all">
-                  <X className="w-5 h-5" />
+                <div>
+                  <h2 className="text-3xl font-serif font-bold text-navy-950">Guest Command Center</h2>
+                  <p className="text-sm text-navy-950/40 mt-1">Manage all reservations and guest special requests.</p>
+                </div>
+                <button onClick={() => setShowBookingsModal(false)} className="w-12 h-12 bg-sand-50 rounded-full flex items-center justify-center text-navy-950/40 hover:bg-gold-50 hover:text-gold-600 transition-all">
+                  <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="overflow-y-auto pr-2 space-y-4">
+              
+              <div className="overflow-y-auto pr-2 space-y-6 flex-grow scrollbar-hide">
                 {(resort.bookings || []).length > 0 ? (
                   (resort.bookings || []).map((booking: any) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 rounded-2xl border border-sand-100 bg-sand-50/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center font-bold text-navy-950 border border-sand-200">
-                          {booking.user?.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
-                          <p className="text-[10px] text-navy-950/40 uppercase tracking-widest">
-                            {new Date(booking.checkIn).toLocaleDateString()} — {booking.guests} Guests
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        <span className={cn("px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                          booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
-                          booking.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-100" :
-                          "bg-gold-50 text-gold-700 border-gold-100")}>
-                          {booking.status}
-                        </span>
-                        <p className="text-xs font-bold text-navy-950 mt-1">₹{booking.totalPrice?.toLocaleString("en-IN")}</p>
-                        {booking.status === "PENDING" && (
-                          <div className="flex gap-2 mt-2">
-                            <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white shadow-none">Accept</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="h-8 px-3 text-xs border-red-200 text-red-600 hover:bg-red-50">Reject</Button>
+                    <div key={booking.id} className="p-8 rounded-[2.5rem] border border-sand-100 bg-white hover:border-gold-300 hover:shadow-xl transition-all group">
+                      <div className="flex flex-col md:flex-row gap-8">
+                        {/* Guest Profile Info */}
+                        <div className="w-full md:w-1/3 space-y-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-navy-950 flex items-center justify-center text-xl font-bold text-white shadow-lg">
+                              {booking.user?.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-navy-950">{booking.user?.name}</p>
+                              <p className="text-[10px] font-bold text-gold-600 uppercase tracking-widest">{booking.referenceNumber}</p>
+                            </div>
                           </div>
-                        )}
+                          <div className="p-4 rounded-2xl bg-sand-50/50 border border-sand-100 space-y-2">
+                            <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Contact Info</p>
+                            <p className="text-xs font-bold text-navy-950">{booking.user?.email}</p>
+                            <p className="text-xs text-navy-950/60 font-medium">+91 98765 43210</p>
+                          </div>
+                          <div className="flex gap-2">
+                             <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">Message</Button>
+                             <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">History</Button>
+                          </div>
+                        </div>
+
+                        {/* Booking & Requests Details */}
+                        <div className="flex-grow space-y-6">
+                          <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Check-In</p>
+                              <p className="text-sm font-bold text-navy-950">{new Date(booking.checkIn).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Check-Out</p>
+                              <p className="text-sm font-bold text-navy-950">{new Date(booking.checkOut).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Guests</p>
+                              <p className="text-sm font-bold text-navy-950">{booking.guests} People</p>
+                            </div>
+                          </div>
+
+                          {/* Special Requests Section */}
+                          <div className="p-6 rounded-3xl bg-gold-50/50 border border-gold-100 relative overflow-hidden">
+                             <div className="absolute top-0 right-0 w-16 h-16 bg-gold-500/5 rounded-full blur-xl -mr-8 -mt-8" />
+                             <p className="text-[10px] font-bold text-gold-700 uppercase tracking-widest mb-2 flex items-center gap-2">
+                               <AlertCircle className="w-3.5 h-3.5" /> Guest Special Requests
+                             </p>
+                             <p className="text-sm text-navy-950/70 font-medium italic">
+                               {booking.specialRequests || "No special requests mentioned by the guest for this stay."}
+                             </p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-sand-100">
+                             <div>
+                               <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Status & Payment</p>
+                               <div className="flex items-center gap-3">
+                                 <span className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                   booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
+                                   booking.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-100" :
+                                   "bg-gold-50 text-gold-700 border-gold-100")}>
+                                   {booking.status}
+                                 </span>
+                                 <p className="text-lg font-serif font-bold text-navy-950">₹{booking.totalPrice?.toLocaleString("en-IN")}</p>
+                               </div>
+                             </div>
+                             
+                             <div className="flex gap-3">
+                               {booking.status === "PENDING" && (
+                                 <>
+                                   <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
+                                   <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
+                                 </>
+                               )}
+                               {booking.status === "CONFIRMED" && (
+                                 <Button variant="outline" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200">Generate Invoice</Button>
+                               )}
+                             </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-10 text-navy-950/40">No bookings found for this resort.</div>
+                  <div className="text-center py-20 bg-sand-50/50 rounded-[3rem] border-2 border-dashed border-sand-200">
+                    <CalIcon className="w-12 h-12 text-sand-300 mx-auto mb-4" />
+                    <p className="text-lg font-serif font-bold text-navy-950/40">No active reservations found.</p>
+                  </div>
                 )}
               </div>
             </motion.div>

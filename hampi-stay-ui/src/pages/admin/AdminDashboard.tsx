@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
-  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download
+  TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
+  Eye, EyeOff
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 
-type AdminTab = "overview" | "properties" | "users" | "bookings";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -15,8 +16,12 @@ export function AdminDashboard() {
   const [pendingResorts, setPendingResorts] = useState<any[]>([]);
   const [activeResorts, setActiveResorts] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [allGuides, setAllGuides] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [modalData, setModalData] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -27,12 +32,14 @@ export function AdminDashboard() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/admin/resorts/pending"),
-        fetch("http://localhost:5000/api/admin/resorts/active"),
-        fetch("http://localhost:5000/api/users/list"),
-        fetch("http://localhost:5000/api/admin/stats"),
-        fetch("http://localhost:5000/api/admin/bookings/all")
+      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes] = await Promise.all([
+        fetch("/api/admin/resorts/pending"),
+        fetch("/api/admin/resorts/active"),
+        fetch("/api/users/list"),
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/bookings/all"),
+        fetch("/api/admin/guides"),
+        fetch("/api/settings")
       ]);
       
       if (pendingRes.ok) setPendingResorts(await pendingRes.json());
@@ -40,6 +47,11 @@ export function AdminDashboard() {
       if (usersRes.ok) setAllUsers(await usersRes.json());
       if (statsRes.ok) setStats(await statsRes.json());
       if (bookingsRes.ok) setAllBookings(await bookingsRes.json());
+      if (guidesRes.ok) setAllGuides(await guidesRes.json());
+      if (settingsRes.ok) {
+        const settings = await settingsRes.json();
+        setGuideServiceEnabled(settings.guideServiceEnabled);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -47,10 +59,28 @@ export function AdminDashboard() {
     }
   };
 
+  const handleGuideStatus = async (profileId: string, status: "APPROVED" | "REJECTED") => {
+    setProcessingId(profileId);
+    try {
+      const res = await fetch(`/api/admin/guides/${profileId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleStatusUpdate = async (id: string, status: "APPROVED" | "REJECTED") => {
     setProcessingId(id);
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/resorts/${id}/status`, {
+      const res = await fetch(`/api/admin/resorts/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
@@ -58,8 +88,8 @@ export function AdminDashboard() {
       if (res.ok) {
         // Refresh both lists
         const [p, a] = await Promise.all([
-          fetch("http://localhost:5000/api/admin/resorts/pending").then(r => r.json()),
-          fetch("http://localhost:5000/api/admin/resorts/active").then(r => r.json())
+          fetch("/api/admin/resorts/pending").then(r => r.json()),
+          fetch("/api/admin/resorts/active").then(r => r.json())
         ]);
         setPendingResorts(p);
         setActiveResorts(a);
@@ -74,7 +104,7 @@ export function AdminDashboard() {
   const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
     setProcessingId(id);
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/resorts/${id}/feature`, {
+      const res = await fetch(`/api/admin/resorts/${id}/feature`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isFeatured: !currentStatus })
@@ -296,7 +326,7 @@ export function AdminDashboard() {
             </button>
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/30" />
             <input 
@@ -305,7 +335,7 @@ export function AdminDashboard() {
               className="pl-10 pr-4 py-2 bg-white border border-sand-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/20"
             />
           </div>
-          <Button variant="outline" className="gap-2 rounded-xl">
+          <Button variant="outline" className="gap-2 rounded-xl whitespace-nowrap">
             <Filter className="w-4 h-4" />
             Filters
           </Button>
@@ -338,6 +368,361 @@ export function AdminDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+
+  const handleToggleGuideService = async () => {
+    const nextStatus = !guideServiceEnabled;
+    
+    setModalData({
+      title: nextStatus ? "Enable Guide Service" : "SYSTEM SHUTDOWN",
+      message: nextStatus 
+        ? "This will restore all guide-related features, pages, and registration flows globally. Proceed?"
+        : "CRITICAL: This will SHUT DOWN the entire Tour Guide network. It will be hidden from the website, registration, and all public areas. Continue?",
+      onConfirm: async () => {
+        setProcessingId('system-toggle');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        try {
+          const res = await fetch("/api/admin/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ guideServiceEnabled: nextStatus }),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to update system settings');
+          }
+
+          const updatedSettings = await res.json();
+          setGuideServiceEnabled(updatedSettings.guideServiceEnabled);
+          setShowConfirmModal(false);
+        } catch (err: any) {
+          console.error("System Toggle Error:", err);
+          if (err.name === 'AbortError') {
+            alert("Error: Server request timed out. Please check if the backend is running.");
+          } else {
+            alert(`Error: ${err.message || 'Could not connect to server'}`);
+          }
+        } finally {
+          setProcessingId(null);
+          clearTimeout(timeoutId);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleGuideActiveToggle = async (profileId: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/guides/${profileId}/toggle-active`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus })
+      });
+      if (res.ok) {
+        setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, isActive: !currentStatus } : g));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAllGuidesStatus = async (status: boolean) => {
+    setModalData({
+      title: status ? "Activate All Experts" : "Global Expert Shutdown",
+      message: `Are you sure you want to ${status ? 'activate' : 'hide'} ALL expert guides across the entire platform?`,
+      onConfirm: async () => {
+        setProcessingId('system-toggle');
+        try {
+          const res = await fetch(`/api/admin/guides/toggle-all`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isActive: status })
+          });
+          if (res.ok) {
+            setAllGuides(prev => prev.map(g => ({ ...g, isActive: status })));
+            setShowConfirmModal(false);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setProcessingId(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const renderGuides = () => (
+    <div className="space-y-6 relative">
+      {/* CUSTOM CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {showConfirmModal && modalData && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowConfirmModal(false)}
+              className="absolute inset-0 bg-navy-950/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[3rem] shadow-luxury p-10 border border-sand-100 overflow-hidden"
+            >
+              {/* Warning Background Icon */}
+              <div className="absolute -top-10 -right-10 opacity-[0.03] pointer-events-none">
+                <AlertCircle className="w-64 h-64 text-navy-950" />
+              </div>
+
+              <div className="relative z-10">
+                <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-8 ${
+                  modalData.title.includes('SHUTDOWN') || modalData.title.includes('Shutdown')
+                    ? "bg-red-50 text-red-600"
+                    : "bg-green-50 text-green-600"
+                }`}>
+                  {modalData.title.includes('SHUTDOWN') || modalData.title.includes('Shutdown') 
+                    ? <AlertCircle className="w-8 h-8" /> 
+                    : <CheckCircle className="w-8 h-8" />
+                  }
+                </div>
+                
+                <h3 className="text-3xl font-serif font-bold text-navy-950 mb-4 uppercase tracking-tight">
+                  {modalData.title}
+                </h3>
+                
+                <p className="text-navy-950/50 leading-relaxed mb-10 text-sm font-medium">
+                  {modalData.message}
+                </p>
+
+                <div className="flex gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowConfirmModal(false)}
+                    className="flex-1 h-14 rounded-2xl border-sand-200 text-navy-950 hover:bg-sand-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={modalData.onConfirm}
+                    isLoading={processingId === 'system-toggle'}
+                    className={`flex-1 h-14 rounded-2xl border-none font-bold ${
+                      modalData.title.includes('SHUTDOWN') || modalData.title.includes('Shutdown')
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950 shadow-luxury"
+                    }`}
+                  >
+                    Confirm
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* MASTER SERVICE SWITCH */}
+      <div className={`p-8 rounded-[3rem] border-2 transition-all mb-12 ${
+        guideServiceEnabled 
+          ? "bg-white border-sand-100 shadow-sm" 
+          : "bg-red-50/50 border-red-200 shadow-lg shadow-red-500/5"
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex gap-6 items-start">
+            <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 ${
+              guideServiceEnabled ? "bg-navy-950 text-white" : "bg-red-600 text-white animate-pulse"
+            }`}>
+              {guideServiceEnabled ? <Sparkles className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-2xl font-bold text-navy-950">Tour Guide Service</h3>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                  guideServiceEnabled ? "bg-green-100 text-green-700" : "bg-red-600 text-white"
+                }`}>
+                  {guideServiceEnabled ? "System Active" : "Service Shut Down"}
+                </span>
+              </div>
+              <p className="text-navy-950/40 text-sm max-w-xl">
+                {guideServiceEnabled 
+                  ? "The expert network is currently operational. All public pages, registration flows, and booking systems are live."
+                  : "The entire guide service is currently offline. No experts or tours are visible to travellers, and registration is disabled."
+                }
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-3">
+             <div 
+               onClick={handleToggleGuideService}
+               className={`relative inline-flex h-12 w-24 items-center rounded-full transition-colors duration-500 cursor-pointer ${
+                 guideServiceEnabled ? "bg-navy-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]" : "bg-red-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
+               }`}
+             >
+               <motion.span 
+                 animate={{ x: guideServiceEnabled ? 52 : 4 }}
+                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                 className="inline-block h-9 w-9 rounded-full bg-white shadow-xl ring-2 ring-white/10"
+               />
+             </div>
+             <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-[0.2em]">Master System Switch</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 bg-white p-8 rounded-[3rem] border border-sand-100 shadow-sm">
+        <div>
+          <h3 className="text-2xl font-bold text-navy-950">Expert Guide Management</h3>
+          <p className="text-sm text-navy-950/40">Review, verify, and manage platform visibility for Hampi experts.</p>
+        </div>
+        <div className="flex items-center gap-6">
+           <div className="flex gap-4">
+              <div className="text-center">
+                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Total Experts</p>
+                <p className="text-xl font-bold text-navy-950">{allGuides.length}</p>
+              </div>
+              <div className="w-px h-10 bg-sand-200" />
+              <div className="text-center">
+                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Active</p>
+                <p className="text-xl font-bold text-green-600">{allGuides.filter(g => g.isActive).length}</p>
+              </div>
+           </div>
+           <div className="w-px h-10 bg-sand-200" />
+           <Button 
+             variant={allGuides.every(g => !g.isActive) ? "primary" : "outline"}
+             onClick={() => handleAllGuidesStatus(allGuides.every(g => !g.isActive))}
+             className={`rounded-2xl h-12 px-8 font-bold border-2 transition-all ${
+               allGuides.every(g => !g.isActive) 
+                 ? "bg-green-600 border-green-600 text-white hover:bg-green-700" 
+                 : "border-red-200 text-red-600 hover:bg-red-50"
+             }`}
+           >
+             {allGuides.every(g => !g.isActive) ? (
+               <><Eye className="w-4 h-4 mr-2" /> Activate All Experts</>
+             ) : (
+               <><EyeOff className="w-4 h-4 mr-2" /> Global Shutdown</>
+             )}
+           </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {allGuides.map((guide) => (
+          <motion.div
+            key={guide.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`bg-white rounded-[2.5rem] border transition-all duration-500 overflow-hidden relative ${
+              !guide.isActive ? 'opacity-70 border-dashed border-sand-300' : 'border-sand-200 shadow-sm'
+            }`}
+          >
+            {/* INDIVIDUAL TOGGLE (Prominent Position) */}
+            <div className="absolute top-8 right-8 z-20">
+               <button 
+                  onClick={() => handleGuideActiveToggle(guide.id, guide.isActive)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm border ${
+                    guide.isActive 
+                      ? 'bg-green-50 border-green-100 text-green-700 hover:bg-green-100' 
+                      : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'
+                  }`}
+                >
+                  {guide.isActive ? (
+                    <><Eye className="w-4 h-4" /> Live on Site</>
+                  ) : (
+                    <><EyeOff className="w-4 h-4" /> Offline</>
+                  )}
+                </button>
+            </div>
+
+            <div className="p-8">
+              <div className="flex flex-col lg:flex-row justify-between gap-10">
+                <div className="flex-grow flex gap-6">
+                  <div className="w-24 h-24 rounded-[2rem] bg-sand-100 flex items-center justify-center overflow-hidden border border-sand-200">
+                    {guide.user?.avatar ? <img src={guide.user.avatar} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-sand-300" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h4 className="text-2xl font-bold text-navy-950">{guide.user?.name}</h4>
+                    </div>
+                    <p className="text-navy-950/40 text-sm mb-4">{guide.user?.email}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-navy-50 text-navy-600 rounded-full text-[10px] font-bold uppercase tracking-widest">{guide.yearsExperience} Years Exp.</span>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        guide.status === 'APPROVED' ? 'bg-green-50 text-green-700' :
+                        guide.status === 'REJECTED' ? 'bg-red-50 text-red-700' :
+                        'bg-gold-50 text-gold-700'
+                      }`}>
+                        {guide.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-grow lg:max-w-md bg-sand-50/50 rounded-3xl p-6 border border-sand-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest flex items-center gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Identity Documents
+                    </p>
+                  </div>
+                  {guide.idType ? (
+                    <div className="flex gap-6">
+                      <div className="flex-grow space-y-2">
+                        <p className="text-xs font-bold text-navy-950">{guide.idType}</p>
+                        <p className="font-mono text-xs text-navy-950/60">{guide.idNumber}</p>
+                      </div>
+                      {guide.idImage && (
+                        <button 
+                          onClick={() => window.open(guide.idImage, '_blank')}
+                          className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 hover:border-gold-500 transition-colors group relative"
+                        >
+                          <img src={guide.idImage} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-navy-950/20">
+                            <ExternalLink className="w-4 h-4 text-white" />
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-navy-950/30 italic">No documents uploaded yet.</p>
+                  )}
+                </div>
+
+                <div className="flex flex-row lg:flex-col gap-3 justify-center pr-20 lg:pr-0">
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 text-white gap-2 h-12 px-8"
+                    onClick={() => handleGuideStatus(guide.id, 'APPROVED')}
+                    disabled={processingId === guide.id || guide.status === 'APPROVED'}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Approve
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-red-200 text-red-600 hover:bg-red-50 gap-2 h-12 px-8"
+                    onClick={() => handleGuideStatus(guide.id, 'REJECTED')}
+                    disabled={processingId === guide.id || guide.status === 'REJECTED'}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+        {allGuides.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-[3rem] border border-sand-100 italic text-navy-950/30">
+            No expert guides found on the platform.
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -487,6 +872,7 @@ export function AdminDashboard() {
             {[
               { id: "overview", label: "Overview", icon: LayoutDashboard },
               { id: "properties", label: "Properties", icon: Building2 },
+              { id: "guides", label: "Guides", icon: Award },
               { id: "users", label: "Users", icon: Users },
               { id: "bookings", label: "Bookings", icon: CalendarDays },
             ].map((tab) => (
@@ -519,6 +905,7 @@ export function AdminDashboard() {
           >
             {activeTab === "overview" && renderOverview()}
             {activeTab === "properties" && renderProperties()}
+            {activeTab === "guides" && renderGuides()}
             {activeTab === "users" && renderUsers()}
             {activeTab === "bookings" && renderBookings()}
           </motion.div>

@@ -39,6 +39,16 @@ export function AttractionsGuide({ attractions }: AttractionsGuideProps) {
           </div>
         ))}
       </div>
+      <div className="mt-8 p-8 bg-navy-950 rounded-[2rem] text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/20 rounded-full blur-3xl -mr-16 -mt-16" />
+        <div className="relative z-10">
+          <h4 className="text-xl font-serif font-bold mb-2">Unlock Hampi's Secrets</h4>
+          <p className="text-white/60 text-sm max-w-md">Our certified local experts can bring these ancient stones to life with historical storytelling.</p>
+        </div>
+        <a href="/guide" className="relative z-10 whitespace-nowrap bg-gold-500 hover:bg-gold-400 text-navy-950 px-8 py-3 rounded-xl font-bold transition-all shadow-gold group-hover:scale-105">
+          Find an Expert
+        </a>
+      </div>
     </section>
   );
 }

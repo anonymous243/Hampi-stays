@@ -14,7 +14,18 @@ export function Hero() {
     "/images/hampi-1.png", // Stone Chariot
     "/images/hampi-2.png", // Virupaksha Temple
     "/images/hampi-3.png", // Hampi Boulders View
-    "/images/hampi-4.png"  // Lotus Mahal
+    "/images/hampi-4.png", // Lotus Mahal
+    "/images/hampi-5.png", // Anjanadri Hill (Hanuman Birthplace)
+    "/images/hampi-6.png"  // Tungabhadra River
+  ];
+
+  const imageLabels = [
+    "The Sacred Stone Chariot",
+    "Virupaksha Temple Gateway",
+    "Ancient Granite Boulders",
+    "The Royal Lotus Mahal",
+    "Anjanadri Hill — Hanuman's Birthplace",
+    "Tungabhadra River Twilight"
   ];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -37,9 +48,9 @@ export function Hero() {
   };
 
   return (
-    <div className="relative min-h-[100svh] flex items-center justify-center bg-navy-950 z-30 overflow-hidden">
+    <div className="relative min-h-[100svh] flex items-center justify-center bg-navy-950 z-30">
       {/* Background Elements Container - clipped to prevent overflow */}
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
           style={{ y: useTransform(scrollY, [0, 1000], [0, 150]) }}
           className="absolute inset-0 w-full h-[120%] -top-[10%]"
@@ -49,14 +60,30 @@ export function Hero() {
               key={currentImageIndex}
               src={hampiImages[currentImageIndex]} 
               initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 0.6, scale: 1.05 }}
+              animate={{ opacity: 0.85, scale: 1.05 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.5 }}
-              alt="Hampi Landscape"
+              alt={imageLabels[currentImageIndex]}
               className="absolute inset-0 w-full h-full object-cover"
             />
           </AnimatePresence>
-          <div className="absolute inset-0 bg-gradient-to-b from-navy-950/70 via-navy-950/30 to-navy-950/90" />
+          
+          {/* Location Label overlay */}
+          <div className="absolute bottom-1/4 right-8 z-20 hidden md:block">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentImageIndex}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col items-end"
+              >
+                <span className="text-[10px] font-bold text-gold-400 uppercase tracking-[0.3em] mb-1">Discover</span>
+                <span className="text-white/80 text-sm font-serif italic tracking-wide">{imageLabels[currentImageIndex]}</span>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-navy-950/60 via-navy-950/20 to-transparent" />
         </motion.div>
 
         {/* Middle Layer: Floating Architectural Sketches (Custom 3D elements) */}
@@ -69,11 +96,11 @@ export function Hero() {
         </motion.div>
 
         {/* Floating Ambient Orbs — warm gold tones */}
-        <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-gold-400/15 rounded-full blur-[80px] md:blur-[100px] animate-float pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/10 rounded-full blur-[100px] md:blur-[120px] animate-float-slow pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-gold-400/5 rounded-full blur-[120px] animate-float pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] bg-sunset-500/5 rounded-full blur-[150px] animate-float-slow pointer-events-none" />
       </div>
 
-      <div className="relative z-10 w-full container mx-auto px-4 sm:px-6 flex flex-col items-center text-center pt-32 pb-12 sm:pt-40 sm:pb-16 md:pt-48 md:pb-20 -translate-y-4 sm:-translate-y-6 md:-translate-y-8">
+      <div className="relative z-20 w-full container mx-auto px-4 sm:px-6 flex flex-col items-center text-center pt-32 pb-12 sm:pt-40 sm:pb-16 md:pt-48 md:pb-20 -translate-y-4 sm:-translate-y-6 md:-translate-y-8">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -154,7 +181,7 @@ export function Hero() {
       </div>
 
       {/* Bottom fade — to warm sandstone */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-t from-sand-50 to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-16 sm:h-24 bg-gradient-to-t from-sand-50/80 to-transparent z-10 pointer-events-none" />
     </div>
   );
 }

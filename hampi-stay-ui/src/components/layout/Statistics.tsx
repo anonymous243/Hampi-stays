@@ -9,9 +9,8 @@ const stats = [
 
 export function Statistics() {
   return (
-    <section className="py-32 bg-sand-100 relative overflow-hidden">
-      {/* Subtle top/bottom borders with gradients */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sand-300 to-transparent" />
+    <section className="py-24 bg-sand-50 relative overflow-hidden">
+      {/* Subtle bottom border with gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sand-300 to-transparent" />
       
       <div className="container mx-auto px-4 md:px-6 relative z-10">

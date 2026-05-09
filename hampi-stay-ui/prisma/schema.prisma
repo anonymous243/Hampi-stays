@@ -17,6 +17,7 @@ datasource db {
 enum Role {
   TRAVELLER
   RESORT_OWNER
+  GUIDE
   ADMIN
 }
 
@@ -48,6 +49,8 @@ model User {
   reviews       Review[]
   notifications Notification[]
   ownerProfile  ResortOwner?
+  guideProfile  GuideProfile?
+  guideBookings GuideBooking[]
 
   @@map("users")
 }
@@ -125,6 +128,12 @@ model RoomPriceOverride {
 
   @@unique([roomId, date])
   @@map("room_price_overrides")
+}
+
+model SystemSettings {
+  id                  String   @id @default(cuid())
+  guideServiceEnabled Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
 }
 
 model RoomBlocking {
@@ -242,4 +251,74 @@ model ResortOwner {
   resorts         Resort[]
 
   @@map("resort_owners")
+}
+
+model GuideProfile {
+  id              String   @id @default(cuid())
+  bio             String
+  specialties     String[] // Architecture, History, Bouldering, etc.
+  languages       String[]
+  pricePerDay     Float
+  pricePerHour    Float
+  yearsExperience Int
+  
+  // Verification Details
+  idType          String?  // Aadhar, PAN, Voter ID
+  idNumber        String?
+  idImage         String?  // Document scan URL
+  status          ResortStatus @default(PENDING)
+  
+  isVerified      Boolean  @default(false) // For ASI certification
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  images          String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings        GuideBooking[]
+  experiences     Experience[]
+
+  @@map("guide_profiles")
+}
+
+model GuideBooking {
+  id               String        @id @default(cuid())
+  date             DateTime
+  durationHours    Int
+  totalPrice       Float
+  status           BookingStatus @default(PENDING)
+  meetingPoint     String
+  specialRequests  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  guideId          String
+  guide            GuideProfile  @relation(fields: [guideId], references: [id])
+
+  @@map("guide_bookings")
+}
+
+model Experience {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  price           Float
+  durationHours   Int
+  images          String[]
+  meetingPoint    String
+  includes        String[] // e.g. ["Water", "Lunch", "Tickets"]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  guideId         String
+  guide           GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@map("experiences")
 }

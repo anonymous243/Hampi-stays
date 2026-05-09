@@ -279,6 +279,38 @@ export function BookingConfirmationPage() {
           </div>
         </motion.div>
 
+        {/* Local Expert Suggestion */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-navy-950 rounded-[3rem] p-8 md:p-12 mb-8 relative overflow-hidden group shadow-2xl border border-white/5"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="px-3 py-1 bg-gold-500/20 border border-gold-500/30 rounded-full text-[10px] font-bold text-gold-400 uppercase tracking-widest">Hampi Expert Network</span>
+            </div>
+            <h3 className="text-3xl font-serif font-bold text-white mb-4">
+              Unlock Hampi's <span className="text-gold-400 italic">Architectural Secrets</span>
+            </h3>
+            <p className="text-sand-100/60 mb-8 max-w-lg leading-relaxed">
+              Experience Hampi through the eyes of a master storyteller. Our certified guides specialize in Vijayanagara history, ancient architecture, and hidden sunset spots.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/experiences" className="flex-1">
+                <Button className="w-full rounded-2xl bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 group/btn font-bold border-none">
+                  Hire a Certified Guide
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Button variant="outline" className="flex-1 rounded-2xl border-white/20 text-white hover:bg-white/10 h-14 font-bold">
+                Maybe Later
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Action Buttons */}
         <motion.div
           initial={{ opacity: 0 }}

@@ -4,6 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import { OAuth2Client } from 'google-auth-library';
+import appleSignin from 'apple-signin-auth';
+import cloudinary from 'cloudinary';
+import multer from 'multer';
+import streamifier from 'streamifier';
 
 dotenv.config();
 
@@ -11,10 +16,128 @@ const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'hampi_luxury_secret_key_2026';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID || '';
+
+// Cloudinary Configuration
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const upload = multer();
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Health Check
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
+// Image Upload Endpoint
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image provided' });
+  }
+
+  const stream = cloudinary.v2.uploader.upload_stream(
+    {
+      folder: 'hampi-stays',
+      resource_type: 'auto'
+    },
+    (error, result) => {
+      if (error) {
+        console.error('Cloudinary Upload Error:', error);
+        return res.status(500).json({ error: 'Upload failed' });
+      }
+      res.json({ url: result.secure_url });
+    }
+  );
+
+  streamifier.createReadStream(req.file.buffer).pipe(stream);
+});
+
+// Apple Auth
+app.post('/api/auth/apple', async (req, res) => {
+  try {
+    const { id_token, user: userDetails } = req.body;
+    const { sub: appleId, email } = await appleSignin.verifyIdToken(id_token, {
+      audience: APPLE_CLIENT_ID,
+    });
+
+    const userEmail = email.toLowerCase();
+    let user = await prisma.user.findUnique({ where: { email: userEmail } });
+
+    if (!user) {
+      // Create new traveler account if not exists
+      // Note: Apple only sends the name on the FIRST sign-in
+      const name = userDetails ? `${userDetails.name.firstName} ${userDetails.name.lastName}` : 'Apple Traveler';
+      
+      user = await prisma.user.create({
+        data: {
+          email: userEmail,
+          name: name,
+          passwordHash: await bcrypt.hash(Math.random().toString(36), 12),
+          role: 'TRAVELLER'
+        }
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    console.error('Apple Auth Error:', error);
+    res.status(500).json({ error: 'Apple authentication failed' });
+  }
+});
+
+// Google Auth
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload) return res.status(400).json({ error: 'Invalid token' });
+
+    const { email, name, sub: googleId, picture: avatar } = payload;
+    const userEmail = email.toLowerCase();
+
+    // Check if user exists
+    let user = await prisma.user.findUnique({ where: { email: userEmail } });
+
+    if (!user) {
+      // Create new traveler account if not exists
+      user = await prisma.user.create({
+        data: {
+          email: userEmail,
+          name: name || 'Google Traveler',
+          passwordHash: await bcrypt.hash(Math.random().toString(36), 12), // Placeholder password
+          role: 'TRAVELLER',
+          avatar
+        }
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar }
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(500).json({ error: 'Google authentication failed' });
+  }
+});
 
 // Root Welcome Route
 app.get('/', (req, res) => {
@@ -37,6 +160,13 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { password, name, role } = req.body;
     const email = req.body.email.toLowerCase();
+    
+    // Password Strength Check (Server-side)
+    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{9,}$/;
+    if (!passwordRegex.test(password)) {
+      console.log(`Registration failed: Weak password attempt for ${email}`);
+      return res.status(400).json({ error: 'Password must be at least 9 characters and include at least one special character' });
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -64,6 +194,20 @@ app.post('/api/auth/register', async (req, res) => {
           data: {
             userId: newUser.id,
             businessName: `${name}'s Portfolio`, // Default business name
+          },
+        });
+      }
+
+      if (role === 'GUIDE') {
+        await tx.guideProfile.create({
+          data: {
+            userId: newUser.id,
+            bio: "Certified Hampi Expert dedicated to sharing the majestic history of the Vijayanagara Empire.",
+            specialties: ["Architecture", "History"],
+            languages: ["English", "Kannada"],
+            pricePerDay: 2500,
+            pricePerHour: 500,
+            yearsExperience: 0,
           },
         });
       }
@@ -295,7 +439,15 @@ app.get('/api/resorts/:slug', async (req, res) => {
   try {
     const resort = await prisma.resort.findUnique({
       where: { slug: req.params.slug },
-      include: { roomTypes: true }
+      include: { 
+        roomTypes: {
+          include: {
+            priceOverrides: true,
+            blockings: true
+          }
+        },
+        discountCodes: true
+      }
     });
     if (!resort) return res.status(404).json({ error: 'Resort not found' });
     res.json(resort);
@@ -369,6 +521,71 @@ app.post('/api/resorts', async (req, res) => {
   }
 });
 
+// Photo Management
+app.post('/api/resorts/:id/photos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body;
+    const resort = await prisma.resort.update({
+      where: { id },
+      data: { images: { push: url } }
+    });
+    res.json(resort);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add photo' });
+  }
+});
+
+app.delete('/api/resorts/:id/photos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body;
+    const resort = await prisma.resort.findUnique({ where: { id } });
+    if (!resort) return res.status(404).json({ error: 'Resort not found' });
+    
+    const updatedImages = resort.images.filter(img => img !== url);
+    const updatedResort = await prisma.resort.update({
+      where: { id },
+      data: { images: updatedImages }
+    });
+    res.json(updatedResort);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete photo' });
+  }
+});
+
+app.post('/api/rooms/:id/photos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body;
+    const room = await prisma.room.update({
+      where: { id },
+      data: { images: { push: url } }
+    });
+    res.json(room);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add room photo' });
+  }
+});
+
+app.delete('/api/rooms/:id/photos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { url } = req.body;
+    const room = await prisma.room.findUnique({ where: { id } });
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+    
+    const updatedImages = room.images.filter(img => img !== url);
+    const updatedRoom = await prisma.room.update({
+      where: { id },
+      data: { images: updatedImages }
+    });
+    res.json(updatedRoom);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete room photo' });
+  }
+});
+
 app.delete('/api/resorts/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -404,8 +621,40 @@ app.get('/api/resorts/:resortId/bookings', async (req, res) => {
 });
 
 // ============================================================
-// ADMIN ROUTES
+// ADMIN & SETTINGS ROUTES
 // ============================================================
+
+// System Settings
+app.get('/api/settings', async (req, res) => {
+  try {
+    let settings = await prisma.systemSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true } });
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.patch('/api/admin/settings', async (req, res) => {
+  try {
+    const { guideServiceEnabled } = req.body;
+    let settings = await prisma.systemSettings.findFirst();
+    if (settings) {
+      settings = await prisma.systemSettings.update({
+        where: { id: settings.id },
+        data: { guideServiceEnabled }
+      });
+    } else {
+      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled } });
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
 app.get('/api/users/:userId/bookings', async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
@@ -421,6 +670,232 @@ app.get('/api/users/:userId/bookings', async (req, res) => {
   } catch (error) {
     console.error('Fetch bookings error:', error);
     res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Guide & Experience Management
+app.get('/api/guides/profile/:userId', async (req, res) => {
+  try {
+    const profile = await prisma.guideProfile.findUnique({
+      where: { userId: req.params.userId },
+      include: { experiences: true }
+    });
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch guide profile' });
+  }
+});
+
+app.post('/api/guides/:profileId/experiences', async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const { title, description, price, durationHours, meetingPoint, includes, images } = req.body;
+    const experience = await prisma.experience.create({
+      data: {
+        title,
+        description,
+        price: parseFloat(price),
+        durationHours: parseInt(durationHours),
+        meetingPoint,
+        includes: includes || [],
+        images: images || [],
+        guideId: profileId
+      }
+    });
+    res.json(experience);
+  } catch (error) {
+    console.error('Create experience error:', error);
+    res.status(500).json({ error: 'Failed to create experience' });
+  }
+});
+
+app.get('/api/guides', async (req, res) => {
+  try {
+    const settings = await prisma.systemSettings.findFirst();
+    if (settings && !settings.guideServiceEnabled) {
+      return res.json([]);
+    }
+    
+    const guides = await prisma.guideProfile.findMany({
+      where: { 
+        isActive: true,
+        status: 'APPROVED'
+      },
+      include: {
+        user: {
+          select: { name: true, email: true }
+        },
+        experiences: true
+      }
+    });
+    res.json(guides);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch guides' });
+  }
+});
+
+app.get('/api/experiences', async (req, res) => {
+  try {
+    const settings = await prisma.systemSettings.findFirst();
+    if (settings && !settings.guideServiceEnabled) {
+      return res.json([]);
+    }
+
+    const experiences = await prisma.experience.findMany({
+      where: {
+        guide: {
+          isActive: true,
+          status: 'APPROVED'
+        }
+      },
+      include: {
+        guide: {
+          include: {
+            user: {
+              select: { name: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(experiences);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch experiences' });
+  }
+});
+
+app.delete('/api/experiences/:id', async (req, res) => {
+  try {
+    await prisma.experience.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete experience' });
+  }
+});
+
+// Update Guide Profile
+app.patch('/api/guides/profile/:userId', async (req, res) => {
+  try {
+    const { bio, specialties, languages, pricePerDay, pricePerHour, idType, idNumber, idImage } = req.body;
+    const profile = await prisma.guideProfile.update({
+      where: { userId: req.params.userId },
+      data: { 
+        bio, 
+        specialties, 
+        languages, 
+        pricePerDay: pricePerDay ? parseFloat(pricePerDay) : undefined, 
+        pricePerHour: pricePerHour ? parseFloat(pricePerHour) : undefined,
+        idType,
+        idNumber,
+        idImage,
+        status: (idType && idNumber && idImage) ? 'PENDING' : undefined // Set to pending if docs are provided
+      }
+    });
+    res.json(profile);
+  } catch (error) {
+    console.error('Update guide profile error:', error);
+    res.status(500).json({ error: 'Failed to update guide profile' });
+  }
+});
+
+// Admin: Get all guides for verification
+app.get('/api/admin/guides', async (req, res) => {
+  try {
+    const guides = await prisma.guideProfile.findMany({
+      include: { user: true }
+    });
+    res.json(guides);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch guides for admin' });
+  }
+});
+
+// Admin: Toggle All Guides Active Status
+app.patch('/api/admin/guides/toggle-all', async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    await prisma.guideProfile.updateMany({
+      data: { isActive }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle all guides' });
+  }
+});
+
+// Admin: Toggle Guide Active Status
+app.patch('/api/admin/guides/:profileId/toggle-active', async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    const profile = await prisma.guideProfile.update({
+      where: { id: req.params.profileId },
+      data: { isActive }
+    });
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle guide status' });
+  }
+});
+
+// Admin: Approve/Reject Guide
+app.patch('/api/admin/guides/:profileId/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const profile = await prisma.guideProfile.update({
+      where: { id: req.params.profileId },
+      data: { 
+        status,
+        isVerified: status === 'APPROVED' // Mark as verified if approved
+      },
+      include: { user: true }
+    });
+    
+    // Create notification for the guide
+    await prisma.notification.create({
+      data: {
+        userId: profile.userId,
+        title: status === 'APPROVED' ? 'Profile Approved!' : 'Verification Update',
+        message: status === 'APPROVED' 
+          ? 'Your guide profile has been verified. You can now accept bookings!' 
+          : 'There was an issue with your documents. Please re-upload clear copies of your ID.',
+        type: 'info'
+      }
+    });
+
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update guide status' });
+  }
+});
+
+// Guide Bookings
+app.get('/api/guides/:profileId/bookings', async (req, res) => {
+  try {
+    const bookings = await prisma.guideBooking.findMany({
+      where: { guideId: req.params.profileId },
+      include: { user: { select: { name: true, email: true, avatar: true } } },
+      orderBy: { date: 'desc' }
+    });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch guide bookings' });
+  }
+});
+
+app.patch('/api/guide-bookings/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await prisma.guideBooking.update({
+      where: { id: req.params.id },
+      data: { status },
+      include: { user: true, guide: { include: { user: true } } }
+    });
+    
+    console.log(`[GUIDE BOOKING] Status updated to ${status} for ${booking.user.name}`);
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update booking status' });
   }
 });
 

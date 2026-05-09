@@ -6,13 +6,16 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
+import { GoogleLogin } from "@react-oauth/google";
+
+// GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   
   const hampiImages = [
@@ -49,19 +52,21 @@ export function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const onGoogleSuccess = async (response: any) => {
     setIsLoading(true);
     setError("");
     try {
-      // For now, Google login is simulated by logging in with a seeded traveler account
-      // In a real app, this would be an OAuth flow
-      await login("traveler@example.com", "password");
+      await loginWithGoogle(response.credential);
       navigate("/dashboard");
     } catch (err: any) {
-      setError("Unable to connect to the server for authentication.");
+      setError(err.message || "Google login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onGoogleError = () => {
+    setError("Google authentication was unsuccessful. Try again later.");
   };
 
   const staggerContainer: Variants = {
@@ -192,19 +197,16 @@ export function LoginPage() {
                 <div className="flex-grow border-t border-sand-200"></div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <button 
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="flex items-center justify-center gap-2 h-12 bg-sand-50 border border-sand-200 rounded-xl hover:bg-gold-50 hover:text-gold-700 hover:border-gold-300 hover:shadow-md transition-all duration-300 group disabled:opacity-50"
-                >
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
-                  <span className="text-sm font-bold text-navy-950 group-hover:text-gold-700 transition-colors">Google</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 h-12 bg-sand-50 border border-sand-200 rounded-xl hover:bg-gold-50 hover:text-gold-700 hover:border-gold-300 hover:shadow-md transition-all duration-300 group">
-                  <img src="https://www.svgrepo.com/show/511330/apple-173.svg" className="w-5 h-5 opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all" alt="Apple" />
-                  <span className="text-sm font-bold text-navy-950 group-hover:text-gold-700 transition-colors">Apple</span>
-                </button>
+              <div className="flex justify-center mt-4">
+                <GoogleLogin
+                  onSuccess={onGoogleSuccess}
+                  onError={onGoogleError}
+                  theme="filled_blue"
+                  shape="pill"
+                  size="large"
+                  text="continue_with"
+                  width="100%"
+                />
               </div>
             </motion.div>
 

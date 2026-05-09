@@ -31,6 +31,19 @@ export type Amenity =
   | "Laundry"
   | "Library";
 
+export interface RoomPriceOverride {
+  id: string;
+  date: string;
+  price: number;
+  minNights?: number;
+}
+
+export interface RoomBlocking {
+  id: string;
+  date: string;
+  reason?: string;
+}
+
 export interface RoomType {
   id: string;
   name: string;
@@ -40,6 +53,9 @@ export interface RoomType {
   amenities: Amenity[];
   images: string[];
   availableCount: number;
+  minNights?: number;
+  priceOverrides?: RoomPriceOverride[];
+  blockings?: RoomBlocking[];
 }
 
 export interface Resort {

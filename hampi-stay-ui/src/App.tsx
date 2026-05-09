@@ -14,7 +14,8 @@ import { OurStoryPage } from "./pages/public/OurStoryPage";
 import { ContactPage } from "./pages/public/ContactPage";
 import { TermsOfServicePage } from "./pages/public/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/public/PrivacyPolicyPage";
-import { HampiGuidePage } from "./pages/public/HampiGuidePage";
+import { LocalExpertsPage } from "./pages/public/LocalExpertsPage";
+import { DiscoveryPage } from "./pages/public/DiscoveryPage";
 
 // Auth Pages
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -27,6 +28,7 @@ import { BookingConfirmationPage } from "./pages/traveler/BookingConfirmationPag
 import { BookingsPage } from "./pages/traveler/BookingsPage";
 import { WishlistPage } from "./pages/traveler/WishlistPage";
 import { ProfilePage } from "./pages/traveler/ProfilePage";
+import { NotificationsPage } from "./pages/traveler/NotificationsPage";
 import { DashboardSelector } from "./components/shared/DashboardSelector";
 import { ResortSetupPage } from "./pages/owner/ResortSetupPage";
 import { InventoryPage } from "./pages/owner/InventoryPage";
@@ -127,6 +129,7 @@ function AnimatedRoutes() {
             />
             <Route path="/dashboard/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
             <Route path="/dashboard/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+            <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route
               path="/dashboard/resort-setup"
@@ -147,7 +150,8 @@ function AnimatedRoutes() {
             <Route path="/experiences" element={<ExperiencesPage />} />
             <Route path="/about" element={<OurStoryPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/guide" element={<HampiGuidePage />} />
+            <Route path="/guide" element={<LocalExpertsPage />} />
+            <Route path="/discovery" element={<DiscoveryPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />

@@ -1,390 +1,271 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import {
-  Clock,
-  Users,
-  Star,
-  MapPin,
-  ArrowRight,
-  Camera,
-  Compass,
-  Sunrise,
-  Palette,
-  UtensilsCrossed,
-  Waves,
+import { 
+  Search, MapPin, Star, ArrowRight, 
+  Award, SlidersHorizontal,
+  Compass, History, Mountain, Sparkles, Camera, IndianRupee
 } from "lucide-react";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const },
-  }),
-};
+import { Button } from "../../components/ui/Button";
+import { cn } from "../../utils/cn";
 
 interface Experience {
-  id: number;
+  id: string;
   title: string;
-  tagline: string;
   description: string;
-  duration: string;
-  groupSize: string;
-  rating: number;
-  reviews: number;
-  price: string;
-  image: string;
-  highlights: string[];
-  icon: React.ElementType;
-  category: string;
+  price: number;
+  durationHours: number;
+  meetingPoint: string;
+  guide: {
+    user: { name: string };
+  };
 }
 
-const experiences: Experience[] = [
-  {
-    id: 1,
-    title: "Heritage Cycle Tour",
-    tagline: "Explore ruins at ground level",
-    description:
-      "Pedal through the ancient bazaar, the Royal Enclosure, and forgotten village paths that no car can reach. Accompanied by a certified heritage guide, you'll discover inscriptions, sculptures, and stories hidden in plain sight across the UNESCO World Heritage Site.",
-    duration: "Full Day (6–7 hrs)",
-    groupSize: "2–8 guests",
-    rating: 4.9,
-    reviews: 187,
-    price: "₹2,500",
-    image:
-      "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?q=80&w=2070&auto=format&fit=crop",
-    highlights: [
-      "Royal Enclosure & Mahanavami Dibba",
-      "Achyutaraya Temple complex",
-      "Hampi Bazaar & Virupaksha Temple",
-      "Local village lunch included",
-    ],
-    icon: Compass,
-    category: "Heritage",
-  },
-  {
-    id: 2,
-    title: "Boulder Sunrise Trek",
-    tagline: "360° panorama at dawn",
-    description:
-      "Rise before dawn and trek to the summit of Matanga Hill for the most breathtaking panoramic view in all of Hampi. Watch as the ancient ruins glow golden in the first light while your guide narrates the legends of the Vijayanagara empire.",
-    duration: "2–3 hours",
-    groupSize: "2–6 guests",
-    rating: 4.9,
-    reviews: 243,
-    price: "₹1,800",
-    image:
-      "https://images.unsplash.com/photo-1596018382916-56d2e341d784?q=80&w=2070&auto=format&fit=crop",
-    highlights: [
-      "Pre-dawn pickup from your resort",
-      "Guided ascent with headlamps",
-      "360° sunrise panorama from summit",
-      "Hot chai & breakfast at the top",
-    ],
-    icon: Sunrise,
-    category: "Adventure",
-  },
-  {
-    id: 3,
-    title: "Archaeology Deep Dive",
-    tagline: "With a field archaeologist",
-    description:
-      "Join a private tour led by a practicing field archaeologist to explore lesser-known sites: the Queen's Bath, Elephant Stables, the underground Prasanna Virupaksha temple, and hidden inscriptions that reveal the daily life of a 15th-century empire.",
-    duration: "3–4 hours",
-    groupSize: "2–4 guests",
-    rating: 4.8,
-    reviews: 156,
-    price: "₹3,500",
-    image:
-      "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?q=80&w=2070&auto=format&fit=crop",
-    highlights: [
-      "Queen's Bath & Elephant Stables",
-      "Underground temple exploration",
-      "Decoding ancient Kannada inscriptions",
-      "Exclusive access to restricted zones",
-    ],
-    icon: Camera,
-    category: "Heritage",
-  },
-  {
-    id: 4,
-    title: "Coracle Ride on Tungabhadra",
-    tagline: "Drift through ancient waters",
-    description:
-      "Glide across the Tungabhadra River in a traditional round coracle boat, passing boulder formations, riverside temples, and ancient bathing ghats. The sunset version includes a riverside bonfire dinner with local Kalyani cuisine.",
-    duration: "1.5–2 hours",
-    groupSize: "2–4 guests",
-    rating: 4.7,
-    reviews: 312,
-    price: "₹1,200",
-    image:
-      "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?q=80&w=2070&auto=format&fit=crop",
-    highlights: [
-      "Traditional round coracle boat",
-      "Riverside temple views",
-      "Sunset & golden hour timing",
-      "Optional bonfire dinner add-on",
-    ],
-    icon: Waves,
-    category: "Nature",
-  },
-  {
-    id: 5,
-    title: "Royal Hampi Cooking Class",
-    tagline: "Taste the Vijayanagara empire",
-    description:
-      "Learn to cook authentic North Karnataka cuisine with a local chef in a traditional kitchen. From Jolada Rotti to Ennegayi, discover recipes passed down through generations of Hampi families. Includes a full sit-down meal of your creations.",
-    duration: "3 hours",
-    groupSize: "2–6 guests",
-    rating: 4.8,
-    reviews: 98,
-    price: "₹2,000",
-    image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=2000",
-    highlights: [
-      "Local market visit for ingredients",
-      "Traditional wood-fire cooking",
-      "5-course Karnataka thali preparation",
-      "Recipe booklet to take home",
-    ],
-    icon: UtensilsCrossed,
-    category: "Cultural",
-  },
-  {
-    id: 6,
-    title: "Stone Carving Workshop",
-    tagline: "Create like the ancients",
-    description:
-      "Work alongside a master stone carver descended from Vijayanagara artisans. Learn basic techniques of soapstone carving and create your own miniature sculpture inspired by the temple motifs that surround you. A truly hands-on heritage experience.",
-    duration: "2–3 hours",
-    groupSize: "2–4 guests",
-    rating: 4.9,
-    reviews: 67,
-    price: "₹2,800",
-    image:
-      "https://images.unsplash.com/photo-1591536098930-d571deee309a?auto=format&fit=crop&q=80&w=2000",
-    highlights: [
-      "Learn from a master artisan",
-      "Soapstone carving techniques",
-      "Create your own sculpture",
-      "Take your creation home",
-    ],
-    icon: Palette,
-    category: "Cultural",
-  },
-];
-
-
 export function ExperiencesPage() {
-  return (
-    <main className="min-h-screen bg-sand-50">
-      {/* ── HERO ── */}
-      <section className="relative pt-36 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-gold-200/20 rounded-full blur-[150px] pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-sunset-200/15 rounded-full blur-[100px] pointer-events-none" />
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-        <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
+  const categories = [
+    { name: "All", icon: Compass },
+    { name: "History", icon: History },
+    { name: "Adventure", icon: Mountain },
+    { name: "Architecture", icon: Sparkles },
+  ];
+
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        const res = await fetch('/api/experiences');
+        if (!res.ok) throw new Error('API request failed');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setExperiences(data);
+        } else {
+          console.warn("API did not return an array:", data);
+          setExperiences([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch experiences", err);
+        setExperiences([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchExperiences();
+  }, []);
+
+  const filteredExperiences = experiences.filter(exp => {
+    const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         exp.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || exp.title.includes(selectedCategory) || exp.description.includes(selectedCategory);
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <div className="min-h-screen bg-sand-50 pb-32">
+      {/* Hero Section */}
+      <section className="relative h-[65vh] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop" 
+            className="w-full h-full object-cover scale-105 animate-slow-zoom"
+            alt="Hampi Ruins"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-navy-950/80 via-navy-950/40 to-sand-50" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10 text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 bg-sunset-100/60 backdrop-blur-md border border-sunset-200/60 rounded-full px-5 py-2 mb-6">
-              <Compass className="w-4 h-4 text-sunset-600" />
-              <span className="text-xs font-bold tracking-widest uppercase text-sunset-700">
-                Immersive Activities
-              </span>
+            <span className="px-4 py-1.5 rounded-full bg-gold-500/20 border border-gold-500/30 text-[10px] font-bold uppercase tracking-widest text-gold-400 mb-6 inline-block backdrop-blur-md">
+              Hampi Expert Network
+            </span>
+            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-8 leading-tight">
+              Don't Just See Hampi. <br />
+              <span className="italic text-gold-400">Experience Its Soul.</span>
+            </h1>
+            
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto relative group mb-12">
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-xl rounded-3xl -m-2 opacity-0 group-focus-within:opacity-100 transition-all duration-500" />
+              <div className="relative flex items-center bg-white rounded-2xl shadow-luxury p-2">
+                <div className="flex-1 flex items-center px-4 gap-3">
+                  <Search className="w-5 h-5 text-navy-950/40" />
+                  <input 
+                    type="text" 
+                    placeholder="Search tours, architecture, mythology..."
+                    className="w-full h-12 bg-transparent text-navy-950 font-medium outline-none placeholder:text-navy-950/30"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button className="rounded-xl px-8 h-12 bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 transition-all border-none">
+                  Explore
+                </Button>
+              </div>
             </div>
           </motion.div>
-
-          <motion.h1
-            className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-navy-950 mb-6 leading-[1.1]"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-          >
-            Curated{" "}
-            <span className="text-gold-600 italic">Experiences</span>
-          </motion.h1>
-
-          <motion.p
-            className="text-lg md:text-xl text-navy-800/60 max-w-3xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            Go beyond accommodation. Our signature experiences are curated by
-            local experts — archaeologists, artisans, and adventure guides — to
-            grant you exclusive access to the soul of Hampi.
-          </motion.p>
-
-          {/* Quick stats */}
-          <motion.div
-            className="flex flex-wrap justify-center gap-8 mt-10"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-          >
-            {[
-              { value: "6", label: "Experiences" },
-              { value: "4.8★", label: "Avg Rating" },
-              { value: "1,000+", label: "Guests Served" },
-              { value: "100%", label: "Locally Led" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl font-bold text-navy-950 font-serif">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-navy-800/40 font-semibold mt-1">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
-      {/* ── EXPERIENCE CARDS ── */}
-      <section className="container mx-auto px-4 md:px-6 pb-28">
-        <div className="space-y-12 max-w-6xl mx-auto">
-          {experiences.map((exp, i) => (
-            <motion.div
-              key={exp.id}
-              custom={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              className={`group grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[2rem] overflow-hidden bg-white/80 backdrop-blur-xl border border-sand-200/50 shadow-sm hover:shadow-luxury transition-all duration-500 ${
-                i % 2 === 1 ? "lg:direction-rtl" : ""
-              }`}
+      {/* Main Content */}
+      <section className="container mx-auto px-4 py-20 relative z-20">
+        {/* Categories */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+          {categories.map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={cn(
+                "flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-sm transition-all duration-500",
+                selectedCategory === cat.name
+                  ? "bg-navy-950 text-white shadow-luxury scale-105"
+                  : "bg-white text-navy-950/60 hover:bg-sand-100 shadow-sm"
+              )}
             >
-              {/* Image */}
-              <div
-                className={`relative aspect-[4/3] lg:aspect-auto overflow-hidden ${
-                  i % 2 === 1 ? "lg:order-2" : ""
-                }`}
-              >
-                <img
-                  src={exp.image}
-                  alt={exp.title}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-[0.16,1,0.3,1] group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-transparent" />
-
-                {/* Category Badge */}
-                <div className="absolute top-6 left-6">
-                  <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 text-xs font-bold text-white tracking-wider uppercase">
-                    <exp.icon className="w-3.5 h-3.5" />
-                    {exp.category}
-                  </span>
-                </div>
-
-                {/* Price badge */}
-                <div className="absolute bottom-6 left-6">
-                  <span className="bg-navy-950/80 backdrop-blur-md text-white font-bold text-lg px-5 py-2 rounded-xl">
-                    {exp.price}
-                    <span className="text-sand-200/60 text-sm font-medium">
-                      {" "}/ person
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-8 md:p-10 lg:p-12 flex flex-col justify-center">
-                <span className="text-gold-600 text-xs font-bold tracking-widest uppercase mb-3">
-                  {exp.tagline}
-                </span>
-                <h3 className="text-2xl md:text-3xl font-serif font-bold text-navy-950 mb-4">
-                  {exp.title}
-                </h3>
-
-                {/* Meta */}
-                <div className="flex flex-wrap items-center gap-4 mb-5 text-sm">
-                  <span className="flex items-center gap-1.5 text-navy-800/50">
-                    <Clock className="w-4 h-4" />
-                    {exp.duration}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-navy-800/50">
-                    <Users className="w-4 h-4" />
-                    {exp.groupSize}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-navy-800/50">
-                    <Star className="w-4 h-4 text-gold-500 fill-gold-500" />
-                    <span className="font-bold text-navy-950">
-                      {exp.rating}
-                    </span>
-                    <span>({exp.reviews})</span>
-                  </span>
-                </div>
-
-                <p className="text-navy-800/60 leading-relaxed text-[15px] mb-6">
-                  {exp.description}
-                </p>
-
-                {/* Highlights */}
-                <div className="mb-8">
-                  <h4 className="text-xs font-bold text-navy-950 uppercase tracking-wider mb-3">
-                    Highlights
-                  </h4>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {exp.highlights.map((hl) => (
-                      <li
-                        key={hl}
-                        className="flex items-center gap-2 text-sm text-navy-800/60"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-gold-500 shrink-0" />
-                        {hl}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-2 bg-navy-950 hover:bg-gold-500 text-white hover:text-navy-950 font-bold px-6 py-3.5 rounded-full transition-all duration-300 text-sm tracking-wider uppercase self-start shadow-sm hover:shadow-gold"
-                >
-                  Reserve Experience
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </motion.div>
+              <cat.icon className={cn("w-5 h-5", selectedCategory === cat.name ? "text-gold-400" : "text-navy-950/20")} />
+              {cat.name}
+            </button>
           ))}
         </div>
+
+        {/* Results Info */}
+        <div className="flex items-center justify-between mb-10 pb-6 border-b border-sand-200">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-serif font-bold text-navy-950">
+              {filteredExperiences.length} <span className="text-navy-950/40">Available Experiences</span>
+            </h2>
+          </div>
+          <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-navy-950/40 hover:text-navy-950 transition-colors">
+            <SlidersHorizontal className="w-4 h-4" /> Filter Results
+          </button>
+        </div>
+
+        {/* Experiences Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-[500px] bg-white/50 rounded-[3rem] animate-pulse" />
+            ))
+          ) : (
+            filteredExperiences.map((exp, i) => (
+              <motion.div
+                key={exp.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="group bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-700 hover:-translate-y-2 flex flex-col"
+              >
+                {/* Image Area */}
+                <div className="relative h-72 overflow-hidden bg-sand-100">
+                   <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                   <div className="absolute top-6 left-6 z-20 flex flex-col gap-2">
+                     <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-bold text-navy-950 uppercase tracking-widest shadow-sm">
+                       {exp.durationHours} Hours
+                     </span>
+                   </div>
+                   <div className="absolute bottom-6 left-6 z-20 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                     <p className="text-white text-sm font-medium flex items-center gap-2">
+                       <MapPin className="w-4 h-4 text-gold-400" /> {exp.meetingPoint}
+                     </p>
+                   </div>
+                   <div className="absolute inset-0 flex items-center justify-center text-sand-300 -z-10 bg-sand-100">
+                      <Camera className="w-12 h-12 opacity-20" />
+                   </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="p-10 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex text-gold-500">
+                      {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-3 h-3 fill-current" />)}
+                    </div>
+                    <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">4.9 (48 Reviews)</span>
+                  </div>
+
+                  <h3 className="text-2xl font-serif font-bold text-navy-950 mb-4 group-hover:text-gold-600 transition-colors">
+                    {exp.title}
+                  </h3>
+                  
+                  <p className="text-navy-950/50 text-sm leading-relaxed line-clamp-3 mb-8">
+                    {exp.description}
+                  </p>
+
+                  <div className="mt-auto space-y-6">
+                    <div className="flex items-center justify-between py-4 border-t border-sand-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-sand-100 border border-sand-200 flex items-center justify-center font-bold text-navy-950 text-xs shadow-inner uppercase">
+                          {exp.guide.user.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Expert Guide</p>
+                          <p className="text-sm font-bold text-navy-950 flex items-center gap-1">
+                            {exp.guide.user.name} <Award className="w-3 h-3 text-gold-500" />
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Starting From</p>
+                        <p className="text-xl font-bold text-navy-950 flex items-center gap-0.5"><IndianRupee className="w-3.5 h-3.5" />{exp.price}</p>
+                      </div>
+                    </div>
+
+                    <Button className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold">
+                      Book This Experience
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+        
+        {!loading && filteredExperiences.length === 0 && (
+          <div className="text-center py-40">
+            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
+              <Search className="w-12 h-12 text-sand-200" />
+            </div>
+            <h3 className="text-3xl font-serif font-bold text-navy-950 mb-4">No results found</h3>
+            <p className="text-navy-950/40 max-w-sm mx-auto mb-8">
+              We couldn't find any experiences matching your search. Try searching for "Architecture" or "History".
+            </p>
+            <Button onClick={() => { setSearchQuery(""); setSelectedCategory("All"); }} variant="outline" className="rounded-2xl border-navy-950">
+              Clear All Filters
+            </Button>
+          </div>
+        )}
       </section>
 
-      {/* ── BOTTOM CTA ── */}
-      <section className="py-20 bg-sand-100 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold-200/15 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <MapPin className="w-8 h-8 text-gold-500 mx-auto mb-5" />
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-navy-950 mb-4">
-              Can't Decide?{" "}
-              <span className="text-gold-600 italic">We'll Help</span>
-            </h2>
-            <p className="text-navy-800/60 max-w-xl mx-auto leading-relaxed mb-8">
-              Our concierge team can craft a custom itinerary combining multiple
-              experiences tailored to your interests, schedule, and group size.
-            </p>
-            <Link
-              to="/contact"
-              className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold px-8 py-4 rounded-full transition-all duration-300 shadow-gold hover:shadow-gold-lg uppercase tracking-wider text-sm"
-            >
-              Talk to Our Concierge
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </motion.div>
+      {/* CTA Section */}
+      <section className="container mx-auto px-4 mt-32">
+        <div className="bg-navy-950 rounded-[4rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl">
+           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+           <div className="absolute -top-24 -left-24 w-96 h-96 bg-gold-500/10 rounded-full blur-[100px]" />
+           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-gold-500/10 rounded-full blur-[100px]" />
+           
+           <div className="relative z-10 max-w-3xl mx-auto">
+             <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8">
+               Are you a local <span className="text-gold-400 italic">Hampi Expert?</span>
+             </h2>
+             <p className="text-xl text-white/60 mb-12 leading-relaxed">
+               Join our network of certified storytellers and share the magic of Hampi with travelers from around the world.
+             </p>
+             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+               <Button size="lg" className="rounded-2xl px-12 h-16 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold border-none">
+                 Join the Expert Network
+               </Button>
+               <Button size="lg" variant="outline" className="rounded-2xl px-12 h-16 border-white/20 text-white hover:bg-white/10 font-bold">
+                 Learn More
+               </Button>
+             </div>
+           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

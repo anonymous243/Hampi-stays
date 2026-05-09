@@ -99,13 +99,13 @@ export function SearchBar() {
   return (
     <div ref={wrapperRef} className="relative">
       {/* Main Bar */}
-      <div className="bg-white/90 backdrop-blur-xl rounded-full shadow-luxury p-2 md:p-3 max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-2 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white/95">
+      <div className="bg-white/90 backdrop-blur-xl rounded-full shadow-luxury p-2 md:p-[10px] max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-2 md:gap-0 border border-white/60 relative group transition-all duration-300 hover:shadow-luxury-hover hover:bg-white/95">
 
         {/* Location */}
         <button
           type="button"
           className={cn(
-            "flex-1 w-full md:w-auto px-8 py-4 md:py-3 rounded-full transition-all duration-300 cursor-pointer relative text-left",
+            "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
             activePanel === "location" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
           )}
           onClick={() => togglePanel("location")}
@@ -126,7 +126,7 @@ export function SearchBar() {
         <button
           type="button"
           className={cn(
-            "flex-1 w-full md:w-auto px-8 py-4 md:py-3 rounded-full transition-all duration-300 cursor-pointer relative text-left",
+            "flex-1 w-full md:w-auto px-8 py-4 md:py-[11px] rounded-full transition-all duration-300 cursor-pointer relative text-left",
             activePanel === "dates" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
           )}
           onClick={() => togglePanel("dates")}
@@ -146,7 +146,7 @@ export function SearchBar() {
         {/* Guests + Search */}
         <div
           className={cn(
-            "flex-[1.2] w-full md:w-auto pl-8 pr-3 py-4 md:py-2 rounded-full transition-all duration-300 flex justify-between items-center",
+            "flex-[1.2] w-full md:w-auto pl-8 pr-3 py-4 md:py-[6px] rounded-full transition-all duration-300 flex justify-between items-center",
             activePanel === "guests" ? "bg-white shadow-md z-10" : "hover:bg-sand-100/50"
           )}
         >
@@ -168,7 +168,7 @@ export function SearchBar() {
             type="button"
             size="lg"
             onClick={handleSearch}
-            className="w-14 h-14 md:w-auto md:h-14 p-0 md:px-8 rounded-full ml-4 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-navy-950 hover:bg-gold-600 border-none"
+            className="w-14 h-14 md:w-auto md:h-[54px] p-0 md:px-8 rounded-full ml-4 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-navy-950 hover:bg-gold-600 border-none"
           >
             <Search className="w-5 h-5 text-white" />
             <span className="hidden md:inline font-bold text-white text-base">Search</span>
@@ -204,17 +204,19 @@ export function SearchBar() {
           <p className="text-[10px] font-bold text-navy-800/40 uppercase tracking-widest px-1 mb-2">
             Suggestions
           </p>
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => { setLocation(s); setActivePanel("dates"); }}
-              className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-sand-50 transition-colors text-navy-950 font-medium text-sm"
-            >
-              <MapPin className="w-4 h-4 text-gold-400" />
-              {s}
-            </button>
-          ))}
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => { setLocation(s); setActivePanel("dates"); }}
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-sand-50 transition-colors text-navy-950 font-medium text-sm"
+              >
+                <MapPin className="w-4 h-4 text-gold-400" />
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

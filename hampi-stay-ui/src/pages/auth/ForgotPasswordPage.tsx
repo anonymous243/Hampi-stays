@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -9,6 +9,24 @@ export function ForgotPasswordPage() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [value, setValue] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const hampiImages = [
+    "/images/hampi-3.png", // Boulders
+    "/images/hampi-2.png", // Virupaksha Temple
+    "/images/hampi-1.png", // Stone Chariot
+    "/images/hampi-4.png"  // Lotus Mahal
+  ];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % hampiImages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const staggerContainer: Variants = {
     hidden: { opacity: 0 },
@@ -24,9 +42,6 @@ export function ForgotPasswordPage() {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
   };
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,41 +70,70 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-sand-50 relative overflow-x-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-hidden">
       {/* Left Panel: Cinematic Image */}
-      <div className="relative w-full md:w-1/2 h-[40vh] md:h-screen overflow-hidden">
-        <img
-          src="/hampi-dawn.png"
-          alt="Ethereal Hampi Landscape at Dawn"
-          className="absolute inset-0 w-full h-full object-cover scale-105"
-        />
+      <div className="relative w-full md:w-1/2 h-[40vh] md:h-auto md:flex-1 overflow-hidden rounded-[15px] shadow-2xl">
+        <AnimatePresence>
+          <motion.img
+            key={currentImageIndex}
+            src={hampiImages[currentImageIndex]}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1.05 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            alt="Scenic Hampi"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
         <div className="absolute inset-0 bg-navy-950/20" />
         
-        <div className="absolute bottom-10 left-10 right-10 text-white z-10 hidden md:block">
+        <div className="absolute bottom-12 left-10 right-10 text-white z-10 hidden md:block">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+            transition={{ duration: 0.9, delay: 0.4 }}
           >
-            <h2 className="text-4xl font-serif font-bold mb-4 leading-tight text-shadow-lg">
+            {/* Decorative pill */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 mb-6">
+              <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse" />
+              <span className="text-sand-100 text-xs font-semibold tracking-widest uppercase">
+                Hampi, Karnataka
+              </span>
+            </div>
+
+            <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
               Regain Access to your <br />
               <span className="text-gold-400 italic">Sanctuary</span>
             </h2>
-            <p className="text-sand-100/90 max-w-md leading-relaxed text-shadow-md">
+            <p className="text-sand-100/80 max-w-sm leading-relaxed text-base">
               Reset your password to continue managing your luxury experiences and exclusive member benefits.
             </p>
+
+            {/* Stats row */}
+            <div className="flex gap-8 mt-8">
+              {[
+                { value: "200+", label: "Luxury Resorts" },
+                { value: "10k+", label: "Happy Guests" },
+                { value: "4.9★", label: "Avg Rating" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-xs text-sand-200 font-medium mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </div>
 
       {/* Right Panel: Glassmorphism Form */}
-      <div className="relative w-full md:w-1/2 h-screen overflow-y-auto flex flex-col items-center p-6 py-12 md:p-12 lg:p-24 z-10">
+      <div className="relative w-full md:w-1/2 h-[60vh] md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
         {/* Ambient warm orbs */}
         <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-gold-200/30 rounded-full blur-[120px] pointer-events-none animate-float-slow" />
         <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-sand-300/30 rounded-full blur-[100px] pointer-events-none animate-float" />
 
-        <div className="w-full max-w-md my-auto">
+        <div className="w-full max-w-md my-auto relative z-10">
           <motion.div 
             variants={staggerContainer}
             initial="hidden"
@@ -97,7 +141,7 @@ export function ForgotPasswordPage() {
             className="w-full bg-sand-100/90 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-luxury border border-sand-200/50 relative"
           >
             {/* Back button */}
-            <Link to="/login" className="absolute top-8 left-8 text-navy-800/40 hover:text-navy-950 transition-colors">
+            <Link to="/login" className="absolute top-8 left-8 text-navy-800/40 hover:text-navy-950 transition-colors z-20">
               <ArrowLeft className="w-6 h-6" />
             </Link>
 

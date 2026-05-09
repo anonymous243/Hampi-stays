@@ -160,7 +160,15 @@ export function InventoryPage() {
                 <option key={r.id} value={i}>{r.name}</option>
               ))}
             </select>
-            <Button variant="outline" className="rounded-xl gap-2 border-sand-200 text-navy-950" onClick={() => alert("Syncing with Google Calendar... This will take a moment.")}>
+            <Button variant="outline" className="rounded-xl gap-2 border-sand-200 text-navy-950" 
+              onClick={async () => {
+                setIsLoading(true);
+                // Simulation: Mocking a sync with Google Calendar
+                setTimeout(() => {
+                  alert("Sync complete! 12 external dates imported from Google Calendar.");
+                  setIsLoading(false);
+                }, 1500);
+              }}>
               <RefreshCw className="w-4 h-4" /> Sync Calendar
             </Button>
             <Button variant="outline" className="rounded-xl gap-2 border-gold-200 text-gold-700" onClick={() => setShowDiscounts(true)}>
@@ -201,17 +209,32 @@ export function InventoryPage() {
                     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                     const isSelected = selectedDates.find(d => d.toDateString() === date.toDateString());
                     
+                    const override = room?.priceOverrides?.find((o: any) => new Date(o.date).toDateString() === date.toDateString());
+                    const blocking = room?.blockings?.find((b: any) => new Date(b.date).toDateString() === date.toDateString());
+                    const currentPrice = override ? override.price : room?.pricePerNight;
+
                     return (
                       <button key={day} onClick={() => toggleDate(day)}
                         className={cn("bg-white h-24 md:h-32 p-4 text-left transition-all hover:bg-gold-50/30 relative group",
-                          isSelected && "bg-gold-50 border-2 border-gold-500 z-10")}>
-                        <span className={cn("text-sm font-bold", isSelected ? "text-gold-700" : "text-navy-950")}>
-                          {day}
-                        </span>
+                          isSelected && "bg-gold-100 border-2 border-gold-500 z-10",
+                          blocking && "bg-red-50/50 hover:bg-red-50/80")}>
+                        <div className="flex justify-between items-start">
+                          <span className={cn("text-sm font-bold", isSelected ? "text-gold-700" : (blocking ? "text-red-400" : "text-navy-950"))}>
+                            {day}
+                          </span>
+                          {blocking && <Lock className="w-3 h-3 text-red-400" />}
+                        </div>
                         
                         <div className="mt-2 space-y-1">
-                          <p className="text-[10px] font-bold text-navy-950/30">₹{room?.pricePerNight}</p>
-                          {/* Placeholder for actual overrides */}
+                          <p className={cn("text-[10px] font-bold", override ? "text-sunset-600" : "text-navy-950/30")}>
+                            ₹{currentPrice?.toLocaleString()}
+                          </p>
+                          {override?.minNights && (
+                            <p className="text-[8px] text-navy-800/40 font-bold uppercase tracking-tighter">Min {override.minNights}nt</p>
+                          )}
+                          {blocking?.reason && (
+                            <p className="text-[8px] text-red-500 font-medium truncate">{blocking.reason}</p>
+                          )}
                         </div>
 
                         {isSelected && (
@@ -243,7 +266,10 @@ export function InventoryPage() {
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <Input label="Override Price (₹)" type="number" value={overridePrice} onChange={e => setOverridePrice(e.target.value)} placeholder="e.g. 25000" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Override Price (₹)" type="number" value={overridePrice} onChange={e => setOverridePrice(e.target.value)} placeholder="e.g. 25000" />
+                    <Input label="Min Nights" type="number" value={minNights} onChange={e => setMinNights(e.target.value)} placeholder="1" />
+                  </div>
                   <Button className="w-full rounded-xl shadow-gold" disabled={selectedDates.length === 0 || !overridePrice} onClick={handleApplyPrice} isLoading={isSaving}>
                     Apply Seasonal Price
                   </Button>

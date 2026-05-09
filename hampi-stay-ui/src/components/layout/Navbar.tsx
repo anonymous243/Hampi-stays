@@ -11,26 +11,54 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
+
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => setGuideServiceEnabled(data.guideServiceEnabled))
+      .catch(err => console.error(err));
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const isDashboard = location.pathname.startsWith("/dashboard");
 
-  const navLinks = isDashboard ? [
-    { name: "Overview", path: "/dashboard" },
-    { name: "Properties", path: "/dashboard" },
-    { name: "Bookings", path: "/dashboard" },
-    { name: "Settings", path: "/dashboard" },
-  ] : [
+  const navLinks = isDashboard 
+    ? user?.role === 'GUIDE'
+      ? [
+          { name: "Overview", path: "/dashboard" },
+          { name: "My Tours", path: "/dashboard?tab=tours" },
+          { name: "My Profile", path: "/dashboard?tab=profile" },
+          { name: "Bookings", path: "/dashboard?tab=bookings" },
+          { name: "Settings", path: "/dashboard?tab=settings" },
+        ]
+      : user?.role === 'TRAVELLER'
+        ? [
+            { name: "Overview", path: "/dashboard" },
+            { name: "Wishlist", path: "/dashboard/wishlist" },
+            { name: "My Bookings", path: "/dashboard/bookings" },
+            { name: "Notifications", path: "/dashboard/notifications" },
+            { name: "Profile", path: "/dashboard/profile" },
+          ]
+        : [
+            { name: "Overview", path: "/dashboard" },
+            { name: "Properties", path: "/dashboard?tab=properties" },
+            { name: "Bookings", path: "/dashboard?tab=bookings" },
+            { name: "Settings", path: "/dashboard?tab=settings" },
+          ]
+    : [
     { name: "Resorts", path: "/resorts" },
-    { name: "Experiences", path: "/experiences" },
-    { name: "Guide", path: "/guide" },
+    ...(guideServiceEnabled ? [
+      { name: "Experiences", path: "/experiences" },
+      { name: "Experts", path: "/guide" },
+      { name: "Discover", path: "/discovery" }
+    ] : []),
     { name: "About", path: "/about" },
   ];
 

@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
+import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 
 export function TravelerDashboard() {
   const navigate = useNavigate();
@@ -58,11 +59,13 @@ export function TravelerDashboard() {
       <aside className="w-64 bg-white border-r border-sand-200 hidden md:flex flex-col sticky top-0 h-screen pt-24 pb-8">
         <div className="px-6 mb-8">
           <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-2xl border border-sand-100">
-            <div className="w-10 h-10 rounded-full bg-navy-900 flex items-center justify-center text-white font-bold overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-navy-950 to-navy-800 flex items-center justify-center text-white overflow-hidden shadow-sm border border-sand-200/50">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
-                user?.name.charAt(0).toUpperCase()
+                <span className="text-[10px] font-bold tracking-tighter">
+                  {user?.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || "H"}
+                </span>
               )}
             </div>
             <div>
@@ -76,26 +79,29 @@ export function TravelerDashboard() {
 
         <nav className="flex-grow px-4 space-y-1">
           {[
-            { name: "Overview", icon: LayoutDashboard, path: "/dashboard", active: true },
+            { name: "Overview", icon: LayoutDashboard, path: "/dashboard" },
             { name: "My Bookings", icon: ShoppingBag, path: "/dashboard/bookings" },
             { name: "Wishlist", icon: Heart, path: "/dashboard/wishlist" },
             { name: "Notifications", icon: Bell, path: "/dashboard/notifications" },
             { name: "Profile", icon: User, path: "/dashboard/profile" },
-          ].map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200",
-                item.active 
-                  ? "bg-navy-950 text-white shadow-lg shadow-navy-950/20" 
-                  : "text-navy-950/60 hover:bg-sand-100 hover:text-navy-950"
-              )}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </Link>
-          ))}
+          ].map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200",
+                  isActive 
+                    ? "bg-navy-950 text-white shadow-lg shadow-navy-950/20" 
+                    : "text-navy-950/60 hover:bg-sand-100 hover:text-navy-950"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="px-4 pt-4 border-t border-sand-100">
@@ -118,6 +124,8 @@ export function TravelerDashboard() {
           <h1 className="text-4xl font-serif font-bold text-navy-950 mb-2">Welcome back, <span className="text-gold-600 italic">{user?.name || "Guest"}</span></h1>
           <p className="text-navy-950/50">Here's what's happening with your Hampi trips.</p>
         </header>
+
+        <ProfileIncompleteBanner />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
