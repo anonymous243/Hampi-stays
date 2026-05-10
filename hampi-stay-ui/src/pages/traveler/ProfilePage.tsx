@@ -50,10 +50,19 @@ export function ProfilePage() {
         body: JSON.stringify(submissionData)
       });
       if (response.ok) {
-        const data = await response.json();
-        const updatedUser = data.user || { ...user, ...submissionData };
+        const updatedUser = await response.json();
         updateUser(updatedUser);
-        setFormData(prev => ({ ...prev, kycStatus: updatedUser.kycStatus }));
+        setFormData({
+          name: updatedUser.name || "",
+          email: updatedUser.email || "",
+          phone: updatedUser.phone || "",
+          avatar: updatedUser.avatar || "",
+          location: updatedUser.location || "Hampi, Karnataka",
+          idType: updatedUser.idType || "",
+          idNumber: updatedUser.idNumber || "",
+          idImage: updatedUser.idImage || "",
+          kycStatus: updatedUser.kycStatus || "NOT_SUBMITTED"
+        });
         setShowSuccess(true);
         setIsEditing(false);
         setTimeout(() => setShowSuccess(false), 3000);

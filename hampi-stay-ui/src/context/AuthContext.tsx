@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
 
   useEffect(() => {
-    const savedUser = sessionStorage.getItem("hampi-user");
+    const savedUser = localStorage.getItem("hampi-user");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error(data.error || 'Login failed');
 
       setUser(data.user);
-      sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
-      sessionStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
       _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error(data.error || 'Google login failed');
 
       setUser(data.user);
-      sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
-      sessionStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
       _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
@@ -108,8 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error(data.error || 'Apple login failed');
 
       setUser(data.user);
-      sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
-      sessionStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
       _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
@@ -130,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error(data.error || 'Registration failed');
 
       setUser(data.user);
-      sessionStorage.setItem("hampi-user", JSON.stringify(data.user));
-      sessionStorage.setItem("hampi-token", data.token);
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
       _setShowAuthModal(false); // Close modal on success
       return data;
     } catch (error) {
@@ -142,13 +142,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
-    sessionStorage.setItem("hampi-user", JSON.stringify(updatedUser));
+    localStorage.setItem("hampi-user", JSON.stringify(updatedUser));
   };
 
   const logout = () => {
     setUser(null);
-    sessionStorage.removeItem("hampi-user");
-    sessionStorage.removeItem("hampi-token");
+    localStorage.removeItem("hampi-user");
+    localStorage.removeItem("hampi-token");
   };
 
   return (
