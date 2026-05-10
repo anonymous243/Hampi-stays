@@ -67,11 +67,16 @@ export function BookingsPage() {
         headers: { "Content-Type": "application/json" },
       });
       if (response.ok) {
+        alert("Booking cancelled successfully.");
         await fetchBookings();
         setActiveTab("cancelled");
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to cancel booking");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`Error: ${err.message || "Failed to cancel booking. Please try again."}`);
     } finally {
       setCancellingId(null);
     }
