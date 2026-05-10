@@ -52,6 +52,8 @@ export function ProfilePage() {
       if (response.ok) {
         const updatedUser = await response.json();
         updateUser(updatedUser);
+        
+        // Update local form state with fresh data from server
         setFormData({
           name: updatedUser.name || "",
           email: updatedUser.email || "",
@@ -63,9 +65,13 @@ export function ProfilePage() {
           idImage: updatedUser.idImage || "",
           kycStatus: updatedUser.kycStatus || "NOT_SUBMITTED"
         });
+
+        setIsEditing(false); // Exit edit mode immediately
         setShowSuccess(true);
-        setIsEditing(false);
         setTimeout(() => setShowSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to save: ${errorData.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error("Profile update failed:", err);
