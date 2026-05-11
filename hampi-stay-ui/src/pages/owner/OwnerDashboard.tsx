@@ -12,7 +12,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 
 export function OwnerDashboard() {

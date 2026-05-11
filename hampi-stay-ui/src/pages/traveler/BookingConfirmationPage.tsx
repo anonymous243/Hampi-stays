@@ -8,7 +8,6 @@ import {
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 import QRCode from "qrcode";
 
