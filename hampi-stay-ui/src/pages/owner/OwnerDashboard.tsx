@@ -492,6 +492,14 @@ export function OwnerDashboard() {
         body: action === 'checkin' || action === 'checkout' ? JSON.stringify({ status: action === 'checkin' ? 'CHECKED_IN' : 'COMPLETED' }) : undefined
       });
       if (response.ok) {
+        // If check-in is successful, trigger the welcome greeting
+        if (action === 'checkin') {
+          try {
+            await fetch(`/api/bookings/${bookingId}/welcome-greet`, { method: 'POST' });
+          } catch (err) {
+            console.error("Failed to trigger welcome greeting:", err);
+          }
+        }
         fetchResorts();
       } else {
         alert("Failed to update booking status.");

@@ -151,6 +151,61 @@ const sendSmsOtp = async (phone, otp) => {
   });
 };
 
+const sendWelcomeGreet = async (booking) => {
+  const { user, resort } = booking;
+  const name = user.name || 'Valued Guest';
+  const resortName = resort.name || 'our resort';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0;padding:0;background:#F5F0E8;font-family:'Georgia',serif;">
+      <div style="max-width:560px;margin:40px auto;background:#0A0F1E;border-radius:24px;overflow:hidden;">
+        <div style="padding:64px 40px;text-align:center;">
+          <p style="color:#D4AF37;font-size:12px;font-weight:700;letter-spacing:5px;text-transform:uppercase;margin-bottom:16px;">Welcome Home</p>
+          <h1 style="color:#F5F0E8;font-size:32px;margin:0;font-weight:400;font-style:italic;">Welcome to ${resortName}</h1>
+          <div style="width:40px;height:1px;background:#D4AF37;margin:32px auto;"></div>
+        </div>
+        <div style="padding:0 40px 48px;">
+          <p style="color:#F5F0E8;font-size:16px;margin:0 0 24px;">Dear ${name},</p>
+          <p style="color:rgba(245,240,232,0.7);font-size:15px;margin:0 0 32px;line-height:1.8;">
+            We are absolutely delighted to have you with us. Your journey to the heart of Hampi's heritage has truly begun.
+            Our team is here to ensure your stay is as timeless as the ruins surrounding us.
+          </p>
+          <div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:16px;padding:24px;text-align:center;">
+            <p style="color:#D4AF37;font-size:13px;font-weight:600;margin:0;">Enjoy your exclusive retreat at ${resortName}.</p>
+          </div>
+        </div>
+        <div style="padding:24px 40px;background:rgba(255,255,255,0.02);text-align:center;">
+          <p style="color:rgba(245,240,232,0.2);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin:0;">© 2026 HampiStays Luxury Collection</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  // Send Email
+  if (resend && user.email) {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: user.email,
+      subject: `Welcome to ${resortName} – HampiStays`,
+      html
+    });
+  }
+
+  // Send SMS
+  if (twilioClient && user.phone) {
+    const phone = user.phone.startsWith('+') ? user.phone : `+91${user.phone}`;
+    await twilioClient.messages.create({
+      body: `Welcome to ${resortName}, ${name}! Your HampiStays check-in is complete. We wish you an unforgettable luxury stay.`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone
+    });
+  }
+};
+
 // Cleanup expired OTPs (runs at startup and every 30 min)
 const cleanupExpiredOtps = async () => {
   try {
@@ -1297,9 +1352,25 @@ app.patch('/api/admin/settings', async (req, res) => {
     } else {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled } });
     }
-    res.json(settings);
+    res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update settings' });
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+app.post('/api/bookings/:id/welcome-greet', async (req, res) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+      include: { user: true, resort: true }
+    });
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    
+    await sendWelcomeGreet(booking);
+    res.json({ success: true, message: 'Welcome greeting sent successfully' });
+  } catch (error) {
+    console.error('Greeting Error:', error);
+    res.status(500).json({ error: 'Failed to send greeting' });
   }
 });
 
