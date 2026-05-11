@@ -194,16 +194,27 @@ export function OwnerDashboard() {
 
     // 4. Verification & QR Section
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const finalY = (doc as any).lastAutoTable.finalY + 25;
+    let finalY = (doc as any).lastAutoTable.finalY + 25;
     
+    // Check for space
+    if (finalY > 210) {
+      doc.addPage();
+      finalY = 25;
+    }
+
     doc.setFont("serif", "bold");
     doc.setFontSize(14);
     doc.text("PARTNER VERIFICATION", 140, finalY);
     
     try {
       const qrData = `PartnerRef: ${safeRef} | Guest: ${booking.user?.name} | Property: ${resort.name}`;
-      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
-      doc.addImage(qrCode, 'PNG', 140, finalY + 5, 45, 45);
+      const qrCode = await QRCode.toDataURL(qrData, { 
+        margin: 1, 
+        width: 300, 
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
+      doc.addImage(qrCode, 'PNG', 135, finalY + 5, 45, 45);
     } catch (e) { console.error(e); }
 
     // 5. Elegant Footer
@@ -309,6 +320,12 @@ export function OwnerDashboard() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     currentY = (doc as any).lastAutoTable.finalY + 20;
 
+    // Check for space
+    if (currentY > 220) {
+      doc.addPage();
+      currentY = 20;
+    }
+
     doc.setFont("times", "bold");
     doc.setFontSize(14);
     doc.text("IMPORTANT INFORMATION", 20, currentY);
@@ -331,8 +348,13 @@ export function OwnerDashboard() {
     // QR Code
     try {
       const qrData = `HS-CONFIRMATION|${safeRef}|${booking.user?.name}|${resort.name}`;
-      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
-      doc.addImage(qrCode, 'PNG', 140, currentY, 40, 40);
+      const qrCode = await QRCode.toDataURL(qrData, { 
+        margin: 1, 
+        width: 300, 
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
+      doc.addImage(qrCode, 'PNG', 135, currentY + 5, 45, 45);
     } catch (e) { console.error(e); }
 
     // 5. Footer

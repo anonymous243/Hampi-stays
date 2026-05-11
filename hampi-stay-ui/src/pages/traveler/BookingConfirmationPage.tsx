@@ -111,6 +111,12 @@ export function BookingConfirmationPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     currentY = (doc as any).lastAutoTable.finalY + 20;
 
+    // Check if we need a new page for the info section
+    if (currentY > 220) {
+      doc.addPage();
+      currentY = 20;
+    }
+
     doc.setFont("times", "bold");
     doc.setFontSize(14);
     doc.text("IMPORTANT INFORMATION", 20, currentY);
@@ -133,8 +139,14 @@ export function BookingConfirmationPage() {
     // QR Code
     try {
       const qrData = `HS-CONFIRMATION|${safeRef}|${cleanGuestName}|${resortName}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
-      doc.addImage(qrCodeDataUrl, 'PNG', 140, currentY, 40, 40);
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { 
+        margin: 1, 
+        width: 300, 
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
+      // Move QR code slightly down from the title to be safer
+      doc.addImage(qrCodeDataUrl, 'PNG', 135, currentY + 5, 45, 45);
     } catch (err) {
       console.error("QR Generation failed", err);
     }
