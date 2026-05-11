@@ -140,6 +140,7 @@ model Room {
   resort          Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
   priceOverrides  RoomPriceOverride[]
   blockings       RoomBlocking[]
+  bookings        Booking[]
 
   @@map("rooms")
 }
@@ -215,6 +216,7 @@ model Booking {
   resortId         String
   resort           Resort        @relation(fields: [resortId], references: [id])
   roomId           String?       // Optional link to specific room type
+  room             Room?         @relation(fields: [roomId], references: [id])
   messages         Message[]
 
   @@map("bookings")

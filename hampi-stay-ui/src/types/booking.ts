@@ -16,6 +16,10 @@ export interface Booking {
     images: string[];
     type?: string;
   };
+  room?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface Message {

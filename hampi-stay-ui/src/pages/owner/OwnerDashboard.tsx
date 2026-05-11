@@ -221,6 +221,138 @@ export function OwnerDashboard() {
     doc.save(`HampiStays_Business_Invoice_${safeRef}.pdf`);
   };
 
+  const handleDownloadConfirmation = async (booking: any) => {
+    const doc = new jsPDF();
+    const safeRef = booking.referenceNumber || `HS-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
+    const issueDate = new Date().toLocaleDateString("en-GB"); // DD/MM/YYYY
+    
+    // Brand Colors
+    const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
+    const gold: [number, number, number] = [184, 134, 11]; // #B8860B
+    const cream: [number, number, number] = [255, 253, 248]; // Alternate row color
+
+    // 1. Header (Dark Section)
+    doc.setFillColor(navy[0], navy[1], navy[2]);
+    doc.rect(0, 0, 210, 50, 'F');
+    
+    // Logo & Slogan
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("times", "bold");
+    doc.setFontSize(32);
+    doc.text("HAMPISTAYS", 20, 30);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 200, 200);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+
+    // Confirmation Info (Right aligned)
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("BOOKING CONFIRMATION", 140, 25);
+    doc.setFont("helvetica", "normal");
+    doc.text(`REF: ${safeRef}`, 140, 32);
+    doc.text(`ISSUED: ${issueDate}`, 140, 39);
+
+    // Gold Divider
+    doc.setFillColor(gold[0], gold[1], gold[2]);
+    doc.rect(0, 50, 210, 2, 'F');
+
+    // 2. Sections: Guest Info & Stay Details
+    let currentY = 70;
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.text("GUEST INFORMATION", 20, currentY);
+    doc.text("STAY DETAILS", 110, currentY);
+
+    currentY += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Primary Guest: ${booking.user?.name || 'Guest'}`, 20, currentY);
+    doc.text(`Resort: ${resort.name}`, 110, currentY);
+    
+    currentY += 6;
+    doc.text(`Booking Status: ${booking.status || 'CONFIRMED'}`, 20, currentY);
+    doc.text(`Accommodation: ${booking.room?.name || 'Standard Room'}`, 110, currentY);
+    
+    currentY += 6;
+    const duration = Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24));
+    doc.text(`Transaction ID: ${booking.id.substring(0, 12).toUpperCase()}`, 20, currentY);
+    doc.text(`Duration: ${duration} Night(s)`, 110, currentY);
+
+    // 3. Details Table
+    currentY += 15;
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Description', 'Details']],
+      body: [
+        ['Check-in Date', `${new Date(booking.checkIn).toLocaleDateString("en-GB")} (14:00 PM)`],
+        ['Check-out Date', `${new Date(booking.checkOut).toLocaleDateString("en-GB")} (11:00 AM)`],
+        ['Guests', `${booking.guests} Adult(s)`],
+        ['Room Type', booking.room?.name || 'Standard Room'],
+        ['Total Amount Paid', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11, halign: 'center' },
+      bodyStyles: { fontSize: 10, cellPadding: 8, textColor: [50, 50, 50], lineColor: [230, 230, 230] },
+      columnStyles: { 
+        0: { fontStyle: 'bold', textColor: navy, cellWidth: 60, fillColor: [252, 252, 252] }, 
+        1: { fillColor: [255, 255, 255] } 
+      },
+      alternateRowStyles: { fillColor: cream },
+      margin: { left: 20, right: 20 },
+    });
+
+    // 4. Important Information & QR Code
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    currentY = (doc as any).lastAutoTable.finalY + 20;
+
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.text("IMPORTANT INFORMATION", 20, currentY);
+    doc.text("CHECK-IN VERIFICATION", 130, currentY);
+
+    currentY += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const infoPoints = [
+      "• Please present a valid Government ID (Aadhar/Passport) at the time of check-in.",
+      "• Cancellation Policy: Free cancellation up to 48 hours prior to arrival.",
+      "• Standard check-in is 2:00 PM and check-out is 11:00 AM.",
+      "• HampiStays is a plastic-free sanctuary. We appreciate your cooperation."
+    ];
+    infoPoints.forEach((point, i) => {
+      doc.text(point, 20, currentY + (i * 5));
+    });
+
+    // QR Code
+    try {
+      const qrData = `HS-CONFIRMATION|${safeRef}|${booking.user?.name}|${resort.name}`;
+      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
+      doc.addImage(qrCode, 'PNG', 140, currentY, 40, 40);
+    } catch (e) { console.error(e); }
+
+    // 5. Footer
+    const footerY = 275;
+    doc.setFillColor(250, 250, 250);
+    doc.rect(0, footerY - 5, 210, 25, 'F');
+    
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.setFont("times", "italic");
+    doc.setFontSize(11);
+    doc.text("Thank you for choosing HampiStays. We look forward to hosting you.", 105, footerY, { align: 'center' });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("HampiStays Headquarters: Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 7, { align: 'center' });
+
+    doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
+  };
+
   const fetchStaffData = async () => {
     if (!resorts.length) return;
     try {
@@ -1458,6 +1590,7 @@ export function OwnerDashboard() {
                                 {booking.status === "CONFIRMED" && (
                                   <div className="flex gap-3">
                                     <Button variant="outline" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200">Generate Invoice</Button>
+                                    <Button variant="outline" onClick={() => handleDownloadConfirmation(booking)} className="rounded-xl border-gold-200 text-gold-700">Download Confirmation</Button>
                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkin')} className="rounded-xl px-8 bg-gold-600 hover:bg-gold-700 text-white shadow-lg">Check-In Guest</Button>
                                   </div>
                                 )}

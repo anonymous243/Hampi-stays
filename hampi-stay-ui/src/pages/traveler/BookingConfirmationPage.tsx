@@ -23,150 +23,138 @@ export function BookingConfirmationPage() {
 
   const { booking, resortName, roomName, image, nights, grandTotal, guestName } = state;
 
-  const handleDownloadInvoice = async () => {
+  const handleDownloadConfirmation = async () => {
     const doc = new jsPDF();
+    const safeRef = booking.referenceNumber || `HS-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
+    const issueDate = new Date().toLocaleDateString("en-GB"); // DD/MM/YYYY
     
-    // Exact Brand Color Palette from Screenshot
+    // Brand Colors
     const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
     const gold: [number, number, number] = [184, 134, 11]; // #B8860B
-    const sand: [number, number, number] = [252, 250, 245]; // #FCFAF5
+    const cream: [number, number, number] = [255, 253, 248]; // Alternate row color
 
-    // 1. Header with Brand Identity (High-Fidelity)
+    // 1. Header (Dark Section)
     doc.setFillColor(navy[0], navy[1], navy[2]);
-    doc.rect(0, 0, 210, 60, 'F');
+    doc.rect(0, 0, 210, 50, 'F');
     
-    // Decorative Gold Line (The Signature Stripe)
-    doc.setFillColor(gold[0], gold[1], gold[2]);
-    doc.rect(0, 60, 210, 3, 'F');
-
-    // Logo & Tagline
+    // Logo & Slogan
     doc.setTextColor(255, 255, 255);
-    doc.setFont("serif", "bold");
+    doc.setFont("times", "bold");
     doc.setFontSize(32);
-    doc.text("HAMPISTAYS", 20, 35);
+    doc.text("HAMPISTAYS", 20, 30);
     
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(180, 180, 180);
-    doc.text("LUXURY ECO-HOSPITALITY", 20, 45);
-
-    // Invoice Meta Info (Right Aligned)
-    doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 200, 200);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+
+    // Confirmation Info (Right aligned)
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.text("BOOKING CONFIRMATION", 140, 30);
+    doc.setFontSize(10);
+    doc.text("BOOKING CONFIRMATION", 140, 25);
     doc.setFont("helvetica", "normal");
-    doc.text(`REF: ${booking.referenceNumber}`, 140, 37);
-    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 44);
+    doc.text(`REF: ${safeRef}`, 140, 32);
+    doc.text(`ISSUED: ${issueDate}`, 140, 39);
 
-    // 2. Main Body Content
+    // Gold Divider
+    doc.setFillColor(gold[0], gold[1], gold[2]);
+    doc.rect(0, 50, 210, 2, 'F');
+
+    // 2. Sections: Guest Info & Stay Details
+    let currentY = 70;
     doc.setTextColor(navy[0], navy[1], navy[2]);
-    
-    // Section Headers
-    doc.setFontSize(16);
-    doc.setFont("serif", "bold");
-    doc.text("GUEST INFORMATION", 20, 85);
-    doc.text("STAY DETAILS", 110, 85);
-    
-    // Details (Guest)
-    doc.setFontSize(11);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.text("GUEST INFORMATION", 20, currentY);
+    doc.text("STAY DETAILS", 110, currentY);
+
+    currentY += 8;
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
     const cleanGuestName = guestName.replace(/_/g, ' ');
-    doc.text(`Primary Guest: ${cleanGuestName}`, 20, 95);
-    doc.text(`Booking Status: ${booking.status.toUpperCase()}`, 20, 102);
-    doc.text(`Transaction ID: TXN-${booking.id.substring(0, 10).toUpperCase()}`, 20, 109);
+    doc.text(`Primary Guest: ${cleanGuestName}`, 20, currentY);
+    doc.text(`Resort: ${resortName}`, 110, currentY);
+    
+    currentY += 6;
+    doc.text(`Booking Status: ${booking.status.toUpperCase()}`, 20, currentY);
+    doc.text(`Accommodation: ${roomName}`, 110, currentY);
+    
+    currentY += 6;
+    doc.text(`Transaction ID: TXN-${booking.id.substring(0, 10).toUpperCase()}`, 20, currentY);
+    doc.text(`Duration: ${nights} Night(s)`, 110, currentY);
 
-    // Details (Stay)
-    doc.text(`Resort: ${resortName}`, 110, 95);
-    doc.text(`Accommodation: ${roomName}`, 110, 102);
-    doc.text(`Duration: ${nights} Nights`, 110, 109);
-
-    // 3. Itemized Data Table (Luxury Theme)
+    // 3. Details Table
+    currentY += 15;
     autoTable(doc, {
-      startY: 125,
+      startY: currentY,
       head: [['Description', 'Details']],
       body: [
-        ['Check-in Date', new Date(booking.checkIn).toLocaleDateString("en-IN") + " (14:00 PM)"],
-        ['Check-out Date', new Date(booking.checkOut).toLocaleDateString("en-IN") + " (11:00 AM)"],
+        ['Check-in Date', `${new Date(booking.checkIn).toLocaleDateString("en-GB")} (14:00 PM)`],
+        ['Check-out Date', `${new Date(booking.checkOut).toLocaleDateString("en-GB")} (11:00 AM)`],
         ['Guests', `${booking.guests} Adult(s)`],
         ['Room Type', roomName],
-        ['Total Amount Paid', `INR ${grandTotal.toLocaleString("en-IN")}`],
+        ['Total Amount Paid', `INR ${grandTotal?.toLocaleString("en-IN")}`],
       ],
-      headStyles: { 
-        fillColor: navy, 
-        textColor: [255, 255, 255], 
-        fontStyle: 'bold',
-        fontSize: 12,
-        halign: 'center',
-        cellPadding: 8
-      },
-      bodyStyles: { 
-        fontSize: 11,
-        cellPadding: 10,
-        textColor: [60, 60, 60]
-      },
-      columnStyles: {
-        0: { fontStyle: 'bold', textColor: navy, cellWidth: 70 },
-        1: { halign: 'left' }
-      },
-      alternateRowStyles: { fillColor: sand },
-      margin: { left: 20, right: 20 },
       theme: 'grid',
-      styles: { lineColor: [230, 230, 230], lineWidth: 0.1 }
+      headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11, halign: 'center' },
+      bodyStyles: { fontSize: 10, cellPadding: 8, textColor: [50, 50, 50], lineColor: [230, 230, 230] },
+      columnStyles: { 
+        0: { fontStyle: 'bold', textColor: navy, cellWidth: 60, fillColor: [252, 252, 252] }, 
+        1: { fillColor: [255, 255, 255] } 
+      },
+      alternateRowStyles: { fillColor: cream },
+      margin: { left: 20, right: 20 },
     });
 
-    // 4. Verification & Policy Section
+    // 4. Important Information & QR Code
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const finalY = (doc as any).lastAutoTable.finalY + 25;
-    
-    // Policy Left Side
-    doc.setFont("serif", "bold");
+    currentY = (doc as any).lastAutoTable.finalY + 20;
+
+    doc.setFont("times", "bold");
     doc.setFontSize(14);
-    doc.text("IMPORTANT INFORMATION", 20, finalY);
-    
+    doc.text("IMPORTANT INFORMATION", 20, currentY);
+    doc.text("CHECK-IN VERIFICATION", 130, currentY);
+
+    currentY += 8;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    const policies = [
-      "• Please present a valid Government ID (Aadhar/Passport) at check-in.",
+    doc.setTextColor(100, 100, 100);
+    const infoPoints = [
+      "• Please present a valid Government ID (Aadhar/Passport) at the time of check-in.",
       "• Cancellation Policy: Free cancellation up to 48 hours prior to arrival.",
       "• Standard check-in is 2:00 PM and check-out is 11:00 AM.",
       "• HampiStays is a plastic-free sanctuary. We appreciate your cooperation."
     ];
-    policies.forEach((p, i) => doc.text(p, 20, finalY + 10 + (i * 6)));
+    infoPoints.forEach((point, i) => {
+      doc.text(point, 20, currentY + (i * 5));
+    });
 
-    // QR Code Right Side
-    doc.setFont("serif", "bold");
-    doc.setFontSize(14);
-    doc.text("CHECK-IN VERIFICATION", 140, finalY);
-    
+    // QR Code
     try {
-      const qrData = `Verification: ${booking.referenceNumber} | Guest: ${cleanGuestName} | Resort: ${resortName}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-        margin: 1,
-        width: 150,
-        color: { dark: '#0A0F1E', light: '#FFFFFF' }
-      });
-      doc.addImage(qrCodeDataUrl, 'PNG', 140, finalY + 5, 45, 45);
+      const qrData = `HS-CONFIRMATION|${safeRef}|${cleanGuestName}|${resortName}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
+      doc.addImage(qrCodeDataUrl, 'PNG', 140, currentY, 40, 40);
     } catch (err) {
       console.error("QR Generation failed", err);
     }
 
     // 5. Elegant Footer
-    doc.setFillColor(248, 248, 248);
-    doc.rect(0, 270, 210, 27, 'F');
+    const footerY = 275;
+    doc.setFillColor(250, 250, 250);
+    doc.rect(0, footerY - 5, 210, 25, 'F');
     
-    doc.setFont("serif", "italic");
-    doc.setFontSize(12);
     doc.setTextColor(navy[0], navy[1], navy[2]);
-    doc.text("Thank you for choosing HampiStays. We look forward to hosting you.", 105, 280, { align: 'center' });
+    doc.setFont("times", "italic");
+    doc.setFontSize(11);
+    doc.text("Thank you for choosing HampiStays. We look forward to hosting you.", 105, footerY, { align: 'center' });
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(160, 160, 160);
-    doc.text("HampiStays Headquarters: Main Road, Kamalapura, Hampi, Karnataka 583239 | help@hampistays.com", 105, 287, { align: 'center' });
+    doc.setTextColor(150, 150, 150);
+    doc.text("HampiStays Headquarters: Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 7, { align: 'center' });
 
-    doc.save(`HampiStays_Confirmation_${booking.referenceNumber}.pdf`);
+    doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
   };
 
   const handleWhatsAppShare = () => {
@@ -314,9 +302,9 @@ export function BookingConfirmationPage() {
           transition={{ delay: 0.5 }}
           className="flex flex-col md:flex-row gap-4"
         >
-          <Button size="lg" className="flex-1 rounded-2xl shadow-gold gap-2" onClick={handleDownloadInvoice}>
+          <Button size="lg" className="flex-1 rounded-2xl shadow-gold gap-2" onClick={handleDownloadConfirmation}>
             <Download className="w-5 h-5" />
-            Download Invoice
+            Download Confirmation
           </Button>
           <Button variant="outline" size="lg" className="flex-1 rounded-2xl gap-2 border-green-500 text-green-600 hover:bg-green-50" onClick={handleWhatsAppShare}>
             <MessageCircle className="w-5 h-5" />

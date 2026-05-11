@@ -1575,7 +1575,7 @@ app.get('/api/owners/:userId/resorts', async (req, res) => {
                 blockings: true
               }
             }, 
-            bookings: { include: { user: true } },
+            bookings: { include: { user: true, room: true } },
             discountCodes: true
           } 
         } 
