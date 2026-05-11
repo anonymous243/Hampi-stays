@@ -684,6 +684,7 @@ app.patch('/api/users/:id', async (req, res) => {
     const { passwordHash, ...safeUser } = user;
     res.json(safeUser);
   } catch (error) {
+    console.error('Error updating user profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
