@@ -20,6 +20,11 @@ model User {
   updatedAt        DateTime          @updatedAt
   isEmailVerified  Boolean           @default(false)
   isMobileVerified Boolean           @default(false)
+  location         String?
+  idType           String?
+  idNumber         String?
+  idImage          String?
+  kycStatus        String?           @default("NOT_SUBMITTED")
   bookings         Booking[]
   guideBookings    GuideBooking[]
   guideProfile     GuideProfile?
