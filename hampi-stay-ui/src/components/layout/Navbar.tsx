@@ -113,7 +113,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav (Center) */}
-          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-10">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 z-20">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path;
               return (
