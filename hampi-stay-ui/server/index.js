@@ -1352,9 +1352,9 @@ app.patch('/api/admin/settings', async (req, res) => {
     } else {
       settings = await prisma.systemSettings.create({ data: { guideServiceEnabled } });
     }
-    res.json(updated);
+    res.json(settings);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update status' });
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 
