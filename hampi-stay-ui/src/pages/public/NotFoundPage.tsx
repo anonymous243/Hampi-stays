@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Compass } from "lucide-react";
-import { Button } from "../components/ui/Button";
+import { Button } from "../../components/ui/Button";
 
 export function NotFoundPage() {
   return (
