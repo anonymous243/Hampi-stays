@@ -84,6 +84,7 @@ model Resort {
   isFeatured      Boolean  @default(false)
   isVerified      Boolean  @default(false)
   status          ResortStatus @default(PENDING)
+  commissionRate  Float    @default(7.0)
   houseRules      String[]
   mealPackages    Json?    // Array of { name, price, description }
   createdAt       DateTime @default(now())
@@ -185,6 +186,7 @@ model Booking {
   status           BookingStatus @default(PENDING)
   specialRequests  String?
   referenceNumber  String        @unique
+  commissionRate   Float         @default(7.0)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

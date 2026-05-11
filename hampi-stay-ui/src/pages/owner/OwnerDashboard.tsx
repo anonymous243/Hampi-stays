@@ -170,14 +170,18 @@ export function OwnerDashboard() {
     doc.text(`Check-out: ${new Date(booking.checkOut).toLocaleDateString("en-IN")}`, 110, 102);
     doc.text(`Guests: ${booking.guests} Pax`, 110, 109);
 
+    const currentComm = booking.commissionRate || 7.0;
+    const commAmt = (booking.totalPrice * currentComm) / 100;
+    const netPayout = booking.totalPrice - commAmt;
+
     // 3. Itemized Payout Table
     autoTable(doc, {
       startY: 125,
       head: [['Description', 'Amount']],
       body: [
         ['Accommodation Charges (Gross)', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
-        ['Platform Service Fee (7%)', `(-) INR ${(booking.totalPrice * 0.07).toLocaleString("en-IN")}`],
-        ['Net Partner Payout', `INR ${(booking.totalPrice * 0.93).toLocaleString("en-IN")}`],
+        [`Platform Service Fee (${currentComm}%)`, `(-) INR ${commAmt.toLocaleString("en-IN")}`],
+        ['Net Partner Payout', `INR ${netPayout.toLocaleString("en-IN")}`],
       ],
       headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center', cellPadding: 8 },
       bodyStyles: { fontSize: 11, cellPadding: 10, textColor: [60, 60, 60] },

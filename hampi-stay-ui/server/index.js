@@ -610,7 +610,11 @@ app.post('/api/bookings', async (req, res) => {
     const { userId, resortId, roomId, checkIn, checkOut, guests, totalPrice, specialRequests, phone, customerName } = req.body;
     const referenceNumber = `HS-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
-    // 1. Create Booking in Database
+    // 1. Fetch Resort to get current commission rate
+    const resort = await prisma.resort.findUnique({ where: { id: resortId } });
+    const currentRate = resort?.commissionRate || 7.0;
+
+    // 2. Create Booking in Database
     const booking = await prisma.booking.create({
       data: {
         userId, resortId, roomId,
@@ -620,6 +624,7 @@ app.post('/api/bookings', async (req, res) => {
         totalPrice: Number(totalPrice),
         specialRequests,
         referenceNumber,
+        commissionRate: currentRate,
         status: 'PENDING' // Initial status
       }
     });
@@ -2111,6 +2116,26 @@ app.post('/api/auth/staff/accept', async (req, res) => {
     res.json({ success: true, message: "Welcome to the team!" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Update Resort Commission Rate
+app.patch('/api/admin/resorts/:id/commission', async (req, res) => {
+  try {
+    const { commissionRate } = req.body;
+    if (typeof commissionRate !== 'number' || commissionRate < 0 || commissionRate > 100) {
+      return res.status(400).json({ error: 'Invalid commission rate. Must be between 0 and 100.' });
+    }
+
+    const resort = await prisma.resort.update({
+      where: { id: req.params.id },
+      data: { commissionRate }
+    });
+
+    res.json({ success: true, commissionRate: resort.commissionRate });
+  } catch (error) {
+    console.error('Admin Commission Update Error:', error);
+    res.status(500).json({ error: 'Failed to update commission rate' });
   }
 });
 

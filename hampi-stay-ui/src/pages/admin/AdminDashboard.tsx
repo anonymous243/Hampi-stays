@@ -30,6 +30,9 @@ export function AdminDashboard() {
   const [flaggedReviews, setFlaggedReviews] = useState<any[]>([]);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [isSavingUser, setIsSavingUser] = useState(false);
+  const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
+  const [newCommissionRate, setNewCommissionRate] = useState<number>(7.0);
+  const [isSavingCommission, setIsSavingCommission] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -198,6 +201,26 @@ export function AdminDashboard() {
       alert("Failed to delete user");
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleUpdateCommission = async (resortId: string) => {
+    setIsSavingCommission(true);
+    try {
+      const res = await fetch(`/api/admin/resorts/${resortId}/commission`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commissionRate: newCommissionRate })
+      });
+      if (res.ok) {
+        setActiveResorts(prev => prev.map(r => r.id === resortId ? { ...r, commissionRate: newCommissionRate } : r));
+        setEditingCommissionId(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update commission rate");
+    } finally {
+      setIsSavingCommission(false);
     }
   };
 
@@ -378,7 +401,7 @@ export function AdminDashboard() {
               <h3 className="text-2xl font-bold text-navy-950 mb-2">{resort.name}</h3>
               <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 max-w-2xl">{resort.description}</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-sand-50 rounded-xl">
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-sand-200">
                     <User className="w-4 h-4 text-navy-950/40" />
@@ -395,6 +418,42 @@ export function AdminDashboard() {
                   <div>
                     <p className="text-[10px] font-bold text-navy-950/40 uppercase">Contact</p>
                     <p className="text-sm font-bold text-navy-950 text-ellipsis overflow-hidden max-w-[150px]">{resort.owner?.user?.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-navy-950 text-white rounded-xl relative group overflow-hidden">
+                  <div className="absolute inset-0 bg-gold-500/10 group-hover:bg-gold-500/20 transition-colors" />
+                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/10 relative z-10">
+                    <TrendingUp className="w-4 h-4 text-gold-400" />
+                  </div>
+                  <div className="relative z-10 flex-grow">
+                    <p className="text-[10px] font-bold text-white/40 uppercase">Commission</p>
+                    {editingCommissionId === resort.id ? (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <input 
+                          type="number" 
+                          autoFocus
+                          value={newCommissionRate}
+                          onChange={(e) => setNewCommissionRate(parseFloat(e.target.value))}
+                          className="w-14 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-xs font-bold outline-none focus:border-gold-400"
+                        />
+                        <button onClick={() => handleUpdateCommission(resort.id)} disabled={isSavingCommission} className="text-gold-400 hover:text-gold-300">
+                          {isSavingCommission ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between w-full">
+                        <p className="text-sm font-bold text-white">{resort.commissionRate || 7.0}%</p>
+                        <button 
+                          onClick={() => {
+                            setEditingCommissionId(resort.id);
+                            setNewCommissionRate(resort.commissionRate || 7.0);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-gold-400 uppercase tracking-widest"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
