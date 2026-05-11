@@ -7,6 +7,13 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
+import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+
+const EXPERIENCE_IMAGES = [
+  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1545105511-921090367201?q=80&w=2070&auto=format&fit=crop"
+];
 
 interface Experience {
   id: string;
@@ -70,14 +77,7 @@ export function ExperiencesPage() {
     <div className="min-h-screen bg-sand-50 pb-32">
       {/* Hero Section */}
       <section className="relative h-[65vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop" 
-            className="w-full h-full object-cover scale-105 animate-slow-zoom"
-            alt="Hampi Ruins"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy-950/80 via-navy-950/40 to-sand-50" />
-        </div>
+        <ImmersiveBackground images={EXPERIENCE_IMAGES} />
 
         <div className="container mx-auto px-4 relative z-10 text-center text-white">
           <motion.div

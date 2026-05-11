@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Landmark, ArrowRight, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
+import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+
+const DISCOVERY_IMAGES = [
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1600100397608-f090747e2f9d?q=80&w=2070&auto=format&fit=crop"
+];
 
 interface POI {
   id: string;
@@ -44,16 +51,7 @@ export function DiscoveryPage() {
   return (
     <div className="min-h-screen bg-navy-950 overflow-hidden relative">
       {/* Cinematic Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-navy-950 via-transparent to-navy-950 z-10" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent opacity-50" />
-        <img 
-          src={bgError ? "/images/hero.png" : "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop"} 
-          className="w-full h-full object-cover opacity-30 scale-110 animate-slow-zoom blur-sm"
-          alt="Hampi Background"
-          onError={() => setBgError(true)}
-        />
-      </div>
+      <ImmersiveBackground images={DISCOVERY_IMAGES} height="h-full" overlayColor="from-navy-950/90 via-navy-950/50 to-navy-950" />
 
       <div className="container mx-auto px-4 pt-32 pb-20 relative z-20 h-screen flex flex-col">
         {/* Header */}

@@ -11,6 +11,13 @@ import {
   ArrowRight,
   Star,
 } from "lucide-react";
+import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+
+const STORY_IMAGES = [
+  "https://images.unsplash.com/photo-1545105511-921090367201?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
+];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -101,9 +108,8 @@ export function OurStoryPage() {
   return (
     <main className="min-h-screen bg-sand-50">
       {/* ── HERO ── */}
-      <section className="relative pt-36 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gold-200/15 rounded-full blur-[160px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-sunset-200/10 rounded-full blur-[100px] pointer-events-none" />
+      <section className="relative pt-36 pb-20 overflow-hidden min-h-[60vh] flex items-center">
+        <ImmersiveBackground images={STORY_IMAGES} overlayColor="from-sand-50/90 via-sand-50/40 to-sand-50" />
 
         <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
           <motion.div
