@@ -1664,7 +1664,9 @@ export function OwnerDashboard() {
                              <p className="text-sm text-navy-950/70 font-medium italic">
                                {booking.specialRequests || "No special requests mentioned by the guest for this stay."}
                              </p>
-                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-6 border-t border-sand-100">
+                           </div>
+
+                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-6 border-t border-sand-100">
                               <div>
                                 <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Status & Payment</p>
                                 <div className="flex items-center gap-3">
