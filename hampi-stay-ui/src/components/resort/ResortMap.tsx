@@ -64,6 +64,14 @@ export function ResortMap({ resorts, className }: ResortMapProps) {
                     Details <MapPin className="w-2 h-2" />
                   </Link>
                 </div>
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${resort.location.lat},${resort.location.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 block w-full py-2 bg-navy-950 text-white text-center text-[10px] font-bold rounded-lg hover:bg-gold-600 transition-colors"
+                >
+                  Get Directions
+                </a>
               </div>
             </Popup>
           </Marker>

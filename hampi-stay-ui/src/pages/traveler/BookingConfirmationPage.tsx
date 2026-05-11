@@ -3,7 +3,7 @@ import { useLocation, Navigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, Calendar, Users,
-  Download, ArrowRight, Star, Home, MessageCircle
+  Download, ArrowRight, Star, Home, MessageCircle, MapPin
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
@@ -310,6 +310,17 @@ export function BookingConfirmationPage() {
             <MessageCircle className="w-5 h-5" />
             Share to WhatsApp
           </Button>
+          <a 
+            href={`https://www.google.com/maps/dir/?api=1&destination=${booking.resort?.locationLat},${booking.resort?.locationLng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1"
+          >
+            <Button variant="outline" size="lg" className="w-full rounded-2xl gap-2 border-gold-500 text-gold-700 hover:bg-gold-50">
+              <MapPin className="w-5 h-5" />
+              Get Directions
+            </Button>
+          </a>
           <Link to="/dashboard/bookings" className="flex-1">
             <Button variant="outline" size="lg" className="w-full rounded-2xl gap-2">
               <Calendar className="w-5 h-5" />

@@ -406,6 +406,19 @@ export function BookingsPage() {
                         <Download className="w-4 h-4" />
                         Download Confirmation
                       </Button>
+                      
+                      {activeTab === "upcoming" && (
+                        <a 
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${booking.resort?.locationLat},${booking.resort?.locationLng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline" className="px-6 rounded-2xl gap-2 border-gold-200 text-gold-700 hover:bg-gold-50">
+                            <MapPin className="w-4 h-4" />
+                            Get Directions
+                          </Button>
+                        </a>
+                      )}
 
                       {activeTab === "upcoming" && (
                         <Button

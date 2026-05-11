@@ -316,9 +316,18 @@ export function ResortDetailPage() {
 
             <section className="mb-10">
               <h2 className="text-2xl font-bold font-serif text-navy-950 mb-5">Location</h2>
-              <div className="h-64 rounded-3xl overflow-hidden border border-sand-200">
+              <div className="h-64 rounded-3xl overflow-hidden border border-sand-200 mb-4">
                 <ResortMap resorts={[resort]} className="w-full h-full" />
               </div>
+              <a 
+                href={`https://www.google.com/maps/dir/?api=1&destination=${resort.location.lat},${resort.location.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-white border border-sand-200 text-navy-950 font-bold rounded-2xl hover:bg-sand-50 transition-all shadow-sm active:scale-95"
+              >
+                <MapPin className="w-4 h-4 text-gold-500" />
+                Get Directions to Resort
+              </a>
             </section>
 
             <AttractionsGuide attractions={resort.nearbyAttractions} />

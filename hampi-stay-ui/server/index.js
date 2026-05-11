@@ -721,7 +721,7 @@ app.get('/api/users/:userId/bookings', async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
       where: { userId: req.params.userId },
-      include: { resort: true },
+      include: { resort: true, room: true },
       orderBy: { checkIn: 'asc' }
     });
     res.json(bookings);
@@ -1253,6 +1253,7 @@ app.get('/api/users/:userId/bookings', async (req, res) => {
       where: { userId: req.params.userId },
       include: {
         resort: true,
+        room: true,
       },
       orderBy: {
         createdAt: 'desc'

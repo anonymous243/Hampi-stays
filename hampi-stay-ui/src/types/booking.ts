@@ -15,6 +15,8 @@ export interface Booking {
     slug: string;
     images: string[];
     type?: string;
+    locationLat?: number;
+    locationLng?: number;
   };
   room?: {
     id: string;
