@@ -69,8 +69,8 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
 
-// Fallback for SPA
-app.get('/:any*', (req, res) => {
+// Fallback for SPA (Catch-all middleware)
+app.use((req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(distPath, 'index.html'));
   } else {
