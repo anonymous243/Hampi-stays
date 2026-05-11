@@ -100,10 +100,10 @@ export function Navbar() {
             className="flex items-center group z-10 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0"
           >
             <img 
-              src="https://images.unsplash.com/photo-1620601438257-23f46f3a8b4b?w=200&h=200&fit=crop" 
+              src="/logo-full.png" 
               alt="HampiStays" 
               className={cn(
-                "h-16 md:h-20 w-auto object-contain transition-all duration-500 rounded-full",
+                "h-16 md:h-20 w-auto object-contain transition-all duration-500",
                 !isScrolled && "brightness-0 invert opacity-90 hover:opacity-100"
               )}
             />
