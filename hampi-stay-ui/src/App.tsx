@@ -41,16 +41,6 @@ import { ScrollToTop } from "./components/shared/ScrollToTop";
 import { useAuth } from "./context/AuthContext";
 import { Navigate } from "react-router-dom";
 
-// Placeholder Pages (for routes not yet built)
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="min-h-[60vh] flex items-center justify-center pt-24 bg-sand-50">
-    <div className="text-center">
-      <h1 className="text-4xl md:text-5xl font-serif text-navy-950 font-bold mb-4">{title}</h1>
-      <p className="text-navy-950/60">Coming soon.</p>
-    </div>
-  </div>
-);
-
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
