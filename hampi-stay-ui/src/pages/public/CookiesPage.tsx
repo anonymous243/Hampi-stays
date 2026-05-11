@@ -8,8 +8,6 @@ import {
   Trash2, 
   Info,
   ExternalLink,
-  CheckCircle2,
-  XCircle
 } from "lucide-react";
 
 const fadeUp = {
