@@ -1720,11 +1720,14 @@ app.get('/api/admin/payouts', async (req, res) => {
 
     const payouts = bookings.map(booking => {
       const isPastCheckout = new Date(booking.checkOut) < new Date();
+      const currentComm = booking.commissionRate || 7.0;
+      const netAmount = booking.totalPrice * (1 - currentComm / 100);
+      
       return {
         id: booking.id,
         resort: booking.resort.name,
         ref: booking.referenceNumber,
-        amount: booking.totalPrice,
+        amount: netAmount,
         status: isPastCheckout ? 'READY' : 'PENDING_CHECKOUT',
         checkOut: booking.checkOut
       };

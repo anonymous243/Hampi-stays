@@ -4,7 +4,7 @@ import {
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
   TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
-  Eye, EyeOff
+  Eye, EyeOff, Loader2
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
@@ -39,7 +39,7 @@ export function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (activeTab === 'security') {
       interval = setInterval(async () => {
         try {
