@@ -98,23 +98,33 @@ export function CheckoutPage() {
         customerName: guestInfo.name
       });
 
-      // 2. Launch Razorpay Checkout
-      if (booking.razorpayOrderId) {
+      // 2. Load Razorpay Script dynamically if not present
+      if (!(window as any).Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        await new Promise((resolve) => (script.onload = resolve));
+      }
+
+      // 3. Launch Razorpay Checkout
+      if (booking.orderId) {
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_5NnZlF1U0T2z8E",
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           name: "HampiStays Luxury",
           description: `Booking for ${bookingData.resortName}`,
           image: "/logo-full.png",
-          order_id: booking.razorpayOrderId,
+          order_id: booking.orderId,
           handler: async function (response: any) {
             try {
               // Verify Payment
               await apiClient.post(`/bookings/${booking.referenceNumber}/verify-payment`, {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
+                razorpay_signature: response.razorpay_signature,
+                referenceNumber: booking.referenceNumber
               });
 
               navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
@@ -136,8 +146,7 @@ export function CheckoutPage() {
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
       } else {
-        // Fallback if Razorpay is not configured (Test Mode)
-        navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
+        throw new Error("Payment gateway failed to initialize. Please try again.");
       }
 
     } catch (err: any) {
