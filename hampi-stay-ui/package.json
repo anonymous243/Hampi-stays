@@ -8,7 +8,8 @@
     "server": "node server/index.js",
     "build": "vite build",
     "start": "node server/index.js",
-    "deploy": "npm run build && npx prisma migrate deploy && node server/index.js",
+    "backend:deploy": "npx prisma generate && npx prisma migrate deploy && node server/index.js",
+    "deploy": "npm run build && npx prisma generate && npx prisma migrate deploy && node server/index.js",
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "preview": "vite preview"

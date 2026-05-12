@@ -328,6 +328,73 @@ async function main() {
     console.log('✅ Seeded sample bookings');
   }
 
+  // 7. Create Guides and Experiences
+  console.log('👨‍🏫 Seeding guides and experiences...');
+  const guideUser = await prisma.user.create({
+    data: {
+      email: 'guide@hampistays.com',
+      name: 'Krishna Deva',
+      passwordHash: await bcrypt.hash('password123', 10),
+      role: 'GUIDE',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop'
+    }
+  });
+
+  const guideProfile = await prisma.guideProfile.create({
+    data: {
+      userId: guideUser.id,
+      bio: "Certified historian and Hampi native with over 15 years of experience uncovering the hidden secrets of the Vijayanagara Empire.",
+      specialties: ["History", "Architecture", "Mythology"],
+      languages: ["English", "Hindi", "Kannada", "Telugu"],
+      pricePerDay: 3500,
+      pricePerHour: 500,
+      yearsExperience: 15,
+      isVerified: true,
+      rating: 4.9,
+      reviewCount: 124
+    }
+  });
+
+  const experienceData = [
+    {
+      title: "Sunrise Spiritual Walk",
+      description: "Witness the first rays of sun hitting the Virupaksha temple gopuram. A journey through ancient rituals, secret water systems, and the living traditions of Hampi.",
+      price: 1200,
+      durationHours: 3,
+      meetingPoint: "Virupaksha Temple Main Entrance",
+      images: ["https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"],
+      includes: ["Traditional Breakfast", "Temple Entrance Fees", "Audio Guide"]
+    },
+    {
+      title: "The Forgotten Empire: Cycle Tour",
+      description: "Explore the vast Royal Enclosure on two wheels. Visit the Lotus Mahal, Elephant Stables, and the Queen's Bath while learning about the daily life of Vijayanagara royals.",
+      price: 1800,
+      durationHours: 5,
+      meetingPoint: "Kamalapura Museum",
+      images: ["https://images.unsplash.com/photo-1545105511-921090367201?q=80&w=2070&auto=format&fit=crop"],
+      includes: ["Bicycle Rental", "Mineral Water", "Helmet"]
+    },
+    {
+      title: "Twilight Photography Expedition",
+      description: "Capture Hampi's boulder-strewn landscape in the golden hour. A specialized tour for photographers focusing on composition and the interplay of light on ancient granite.",
+      price: 2500,
+      durationHours: 4,
+      meetingPoint: "Hemakuta Hill Entrance",
+      images: ["https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop"],
+      includes: ["Photography Tips", "Tripod Rental", "Snacks"]
+    }
+  ];
+
+  for (const exp of experienceData) {
+    await prisma.experience.create({
+      data: {
+        ...exp,
+        guideId: guideProfile.id
+      }
+    });
+  }
+  console.log('✅ Seeded guides and experiences');
+
   console.log('🚀 Database seeding complete!');
 }
 

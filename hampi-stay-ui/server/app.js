@@ -16,6 +16,7 @@ import resortRoutes from './routes/resortRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import heritageRoutes from './routes/heritageRoutes.js';
+import experienceRoutes from './routes/experienceRoutes.js';
 
 
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -55,6 +56,7 @@ app.use('/api/resorts', resortRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/heritage', heritageRoutes);
+app.use('/api/experiences', experienceRoutes);
 
 
 app.use('/api/upload', uploadRoutes);
