@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
+import { apiClient } from "../../utils/apiClient";
 import type { Booking, Message } from "../../types/booking";
 import type { Resort } from "../../types/resort";
 
@@ -30,13 +31,13 @@ export function TravelerDashboard() {
     const fetchData = async () => {
       if (!user) return;
       try {
-        const [bookingsRes, wishlistRes] = await Promise.all([
-          fetch(`/api/users/${user.id}/bookings`),
-          fetch(`/api/users/${user.id}/wishlist`)
+        const [bookingsData, wishlistData] = await Promise.all([
+          apiClient.get<Booking[]>(`/users/${user.id}/bookings`),
+          apiClient.get<Resort[]>(`/users/${user.id}/wishlist`)
         ]);
 
-        if (bookingsRes.ok) setBookings(await bookingsRes.json());
-        if (wishlistRes.ok) setWishlist(await wishlistRes.json());
+        setBookings(bookingsData);
+        setWishlist(wishlistData);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -49,8 +50,7 @@ export function TravelerDashboard() {
     // Real-time sync listener
     const handleWishlistUpdate = () => {
       if (!user) return;
-      fetch(`/api/users/${user.id}/wishlist`)
-        .then(res => res.json())
+      apiClient.get<Resort[]>(`/users/${user.id}/wishlist`)
         .then(data => setWishlist(data))
         .catch(err => console.error("Real-time wishlist sync failed:", err));
     };
@@ -64,8 +64,8 @@ export function TravelerDashboard() {
     if (activeTab === 'inbox' && activeMessageBooking) {
       const fetchMessages = async () => {
         try {
-          const res = await fetch(`/api/messages/${activeMessageBooking.id}`);
-          if (res.ok) setMessages(await res.json());
+          const data = await apiClient.get<Message[]>(`/messages/${activeMessageBooking.id}`);
+          setMessages(data);
         } catch (err) {
           console.error("Poll failed", err);
         }
@@ -81,20 +81,13 @@ export function TravelerDashboard() {
     if (!newMessage.trim() || !activeMessageBooking) return;
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: newMessage,
-          senderId: user?.id,
-          bookingId: activeMessageBooking.id
-        })
+      const savedMsg = await apiClient.post<Message>('/messages', {
+        text: newMessage,
+        senderId: user?.id,
+        bookingId: activeMessageBooking.id
       });
-      if (response.ok) {
-        const savedMsg = await response.json();
-        setMessages(prev => [...prev, savedMsg]);
-        setNewMessage("");
-      }
+      setMessages(prev => [...prev, savedMsg]);
+      setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
     }
