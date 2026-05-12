@@ -117,6 +117,12 @@ export function CheckoutPage() {
           description: `Booking for ${bookingData.resortName}`,
           image: "/logo-full.png",
           order_id: booking.orderId,
+          modal: {
+            ondismiss: function() {
+              console.log('Checkout modal closed');
+              setIsProcessing(false);
+            }
+          },
           handler: async function (response: any) {
             try {
               // Verify Payment
@@ -131,6 +137,7 @@ export function CheckoutPage() {
             } catch (err: any) {
               console.error("Verification failed", err);
               alert("Payment verification failed. Please contact support.");
+              setIsProcessing(false);
             }
           },
           prefill: {
@@ -144,6 +151,13 @@ export function CheckoutPage() {
         };
 
         const rzp = new (window as any).Razorpay(options);
+        
+        rzp.on('payment.failed', function (response: any) {
+          console.error("Payment failed:", response.error);
+          alert(`Payment Failed: ${response.error.description}`);
+          setIsProcessing(false);
+        });
+
         rzp.open();
       } else {
         throw new Error("Payment gateway failed to initialize. Please try again.");
