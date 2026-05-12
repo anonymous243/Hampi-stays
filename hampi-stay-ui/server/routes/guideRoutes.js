@@ -1,6 +1,6 @@
 import express from 'express';
 import * as guideController from '../controllers/guideController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate } from '../middleware/security.js';
 
 const router = express.Router();
 
