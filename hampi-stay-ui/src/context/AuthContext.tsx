@@ -42,6 +42,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
 
   useEffect(() => {
+    if (user) setIsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login?expired=true';
+      }
+    };
+
+    window.addEventListener('hampi-unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('hampi-unauthorized', handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
     const savedUser = localStorage.getItem("hampi-user");
     const token = localStorage.getItem("hampi-token");
     
@@ -71,21 +87,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const data = await apiClient.post<any>('/auth/login', { email, password });
-    setUser(data.user);
-    localStorage.setItem("hampi-user", JSON.stringify(data.user));
-    localStorage.setItem("hampi-token", data.token);
-    _setShowAuthModal(false);
-    return data;
+    setIsLoading(true);
+    try {
+      const data = await apiClient.post<any>('/auth/login', { email, password });
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
+      setUser(data.user);
+      _setShowAuthModal(false);
+      return data;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    } finally {
+      // We don't set isLoading(false) here because we want the ProtectedRoute 
+      // to stay in loading state until the next render cycle picks up the user.
+    }
   };
 
   const loginWithGoogle = async (credential: string, role?: UserRole) => {
-    const data = await apiClient.post<any>('/auth/google', { credential, role });
-    setUser(data.user);
-    localStorage.setItem("hampi-user", JSON.stringify(data.user));
-    localStorage.setItem("hampi-token", data.token);
-    _setShowAuthModal(false);
-    return data;
+    setIsLoading(true);
+    try {
+      const data = await apiClient.post<any>('/auth/google', { credential, role });
+      localStorage.setItem("hampi-user", JSON.stringify(data.user));
+      localStorage.setItem("hampi-token", data.token);
+      setUser(data.user);
+      _setShowAuthModal(false);
+      return data;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
   };
 
   const loginWithApple = async (appleResponse: any, role?: UserRole) => {

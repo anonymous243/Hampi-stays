@@ -10,6 +10,22 @@ router.use(authenticate, authorize('ADMIN'));
 router.get('/stats', adminController.getStats);
 router.get('/users', adminController.getUsers);
 router.delete('/users/:id', adminController.deleteUser);
+
+// Resort Management
+router.get('/resorts/pending', adminController.getPendingResorts);
+router.get('/resorts/active', adminController.getActiveResorts);
 router.patch('/resorts/:id/status', adminController.updateResortStatus);
+
+// Booking Management
+router.get('/bookings/all', adminController.getAllBookings);
+
+// Guide Management
+router.get('/guides', adminController.getAllGuides);
+
+// Financials & Security
+router.get('/payouts', adminController.getPayouts);
+router.get('/security/stats', adminController.getSecurityStats);
+router.get('/reviews/flagged', adminController.getFlaggedReviews);
+router.get('/otp-logs', adminController.getOtpLogs);
 
 export default router;

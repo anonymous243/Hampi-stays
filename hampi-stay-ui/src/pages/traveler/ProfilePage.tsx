@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 
 const getInitials = (name: string) => {
   return name
@@ -38,22 +39,19 @@ export function ProfilePage() {
     const fetchLatestUser = async () => {
       if (!user?.id) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/${user.id}`);
-        if (response.ok) {
-          const freshUser = await response.json();
-          updateUser(freshUser);
-          setFormData({
-            name: freshUser.name || "",
-            email: freshUser.email || "",
-            phone: freshUser.phone || "",
-            avatar: freshUser.avatar || "",
-            location: freshUser.location || "Hampi, Karnataka",
-            idType: freshUser.idType || "",
-            idNumber: freshUser.idNumber || "",
-            idImage: freshUser.idImage || "",
-            kycStatus: freshUser.kycStatus || "NOT_SUBMITTED"
-          });
-        }
+        const freshUser = await apiClient.get<any>(`/users/${user.id}`);
+        updateUser(freshUser);
+        setFormData({
+          name: freshUser.name || "",
+          email: freshUser.email || "",
+          phone: freshUser.phone || "",
+          avatar: freshUser.avatar || "",
+          location: freshUser.location || "Hampi, Karnataka",
+          idType: freshUser.idType || "",
+          idNumber: freshUser.idNumber || "",
+          idImage: freshUser.idImage || "",
+          kycStatus: freshUser.kycStatus || "NOT_SUBMITTED"
+        });
       } catch (err) {
         console.error("Failed to refresh user data:", err);
       }
@@ -72,35 +70,25 @@ export function ProfilePage() {
     };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/${user?.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submissionData)
+      const updatedUser = await apiClient.patch<any>(`/users/${user?.id}`, submissionData);
+      updateUser(updatedUser);
+      
+      // Update local form state with fresh data from server
+      setFormData({
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        phone: updatedUser.phone || "",
+        avatar: updatedUser.avatar || "",
+        location: updatedUser.location || "Hampi, Karnataka",
+        idType: updatedUser.idType || "",
+        idNumber: updatedUser.idNumber || "",
+        idImage: updatedUser.idImage || "",
+        kycStatus: updatedUser.kycStatus || "NOT_SUBMITTED"
       });
-      if (response.ok) {
-        const updatedUser = await response.json();
-        updateUser(updatedUser);
-        
-        // Update local form state with fresh data from server
-        setFormData({
-          name: updatedUser.name || "",
-          email: updatedUser.email || "",
-          phone: updatedUser.phone || "",
-          avatar: updatedUser.avatar || "",
-          location: updatedUser.location || "Hampi, Karnataka",
-          idType: updatedUser.idType || "",
-          idNumber: updatedUser.idNumber || "",
-          idImage: updatedUser.idImage || "",
-          kycStatus: updatedUser.kycStatus || "NOT_SUBMITTED"
-        });
 
-        setIsEditing(false); // Exit edit mode immediately
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to save: ${errorData.error || 'Unknown error'}`);
-      }
+      setIsEditing(false); // Exit edit mode immediately
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       console.error("Profile update failed:", err);
     } finally {
@@ -151,11 +139,7 @@ export function ProfilePage() {
                         const uploadData = new FormData();
                         uploadData.append('image', file);
                         try {
-                          const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload`, { 
-                            method: 'POST', 
-                            body: uploadData 
-                          });
-                          const data = await res.json();
+                          const data = await apiClient.post<any>('/upload', uploadData);
                           setFormData(prev => ({...prev, avatar: data.url}));
                         } catch {
                           alert("Failed to upload image. Please try again.");
@@ -338,8 +322,7 @@ export function ProfilePage() {
                             const uploadData = new FormData();
                             uploadData.append('image', file);
                             try {
-                              const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/upload`, { method: 'POST', body: uploadData });
-                              const data = await res.json();
+                              const data = await apiClient.post<any>('/upload', uploadData);
                               setFormData(prev => ({...prev, idImage: data.url}));
                             } catch { alert("Failed to upload document."); }
                           }}

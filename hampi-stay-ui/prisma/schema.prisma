@@ -18,13 +18,13 @@ model User {
   phone            String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  idImage          String?
+  idNumber         String?
+  idType           String?
   isEmailVerified  Boolean           @default(false)
   isMobileVerified Boolean           @default(false)
-  location         String?
-  idType           String?
-  idNumber         String?
-  idImage          String?
   kycStatus        String?           @default("NOT_SUBMITTED")
+  location         String?
   bookings         Booking[]
   guideBookings    GuideBooking[]
   guideProfile     GuideProfile?
@@ -255,8 +255,8 @@ model GuideProfile {
   idImage         String?
   idNumber        String?
   idType          String?
-  isActive        Boolean        @default(true)
   status          ResortStatus   @default(PENDING)
+  isActive        Boolean        @default(true)
   experiences     Experience[]
   bookings        GuideBooking[]
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)

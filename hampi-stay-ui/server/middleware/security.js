@@ -96,7 +96,9 @@ export const securityHeaders = helmet({
         "'self'", 
         "https://api.razorpay.com", 
         "https://accounts.google.com",
-        "https://newhampistays-production-54fa.up.railway.app"
+        "https://newhampistays-production-54fa.up.railway.app",
+        "http://localhost:5000",
+        "http://localhost:5173"
       ],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       frameSrc: ["'self'", "https://accounts.google.com", "https://api.razorpay.com"],

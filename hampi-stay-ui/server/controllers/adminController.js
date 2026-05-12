@@ -19,7 +19,9 @@ export const getStats = async (req, res, next) => {
       resortCount,
       bookingCount,
       revenue: totalRevenue._sum.totalPrice || 0,
-      platformRating: 4.8
+      platformRating: 4.8,
+      avgBookingValue: bookingCount > 0 ? (totalRevenue._sum.totalPrice || 0) / bookingCount : 0,
+      cancellationRate: 4.2 // Mock for now
     });
   } catch (error) {
     next(error);
@@ -49,17 +51,76 @@ export const getUsers = async (req, res, next) => {
 export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Prevent self-deletion if needed, or other safety checks
-    
     await prisma.$transaction([
       prisma.booking.deleteMany({ where: { userId: id } }),
       prisma.wishlist.deleteMany({ where: { userId: id } }),
       prisma.review.deleteMany({ where: { userId: id } }),
       prisma.user.delete({ where: { id } })
     ]);
-    
-    res.json({ success: true, message: 'User and associated data deleted' });
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPendingResorts = async (req, res, next) => {
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'PENDING' },
+      include: { owner: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(resorts);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getActiveResorts = async (req, res, next) => {
+  try {
+    const resorts = await prisma.resort.findMany({
+      where: { status: 'APPROVED' },
+      include: { owner: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(resorts);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllBookings = async (req, res, next) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      include: { 
+        user: true, 
+        resort: true 
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(bookings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllGuides = async (req, res, next) => {
+  try {
+    const guides = await prisma.guideProfile.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            phone: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(guides);
   } catch (error) {
     next(error);
   }
@@ -69,25 +130,44 @@ export const updateResortStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
     const resort = await prisma.resort.update({
       where: { id },
       data: { status },
       include: { owner: { include: { user: true } } }
     });
-    
-    await prisma.notification.create({
-      data: {
-        userId: resort.owner.userId,
-        title: status === 'APPROVED' ? 'Resort Approved!' : 'Resort Update Required',
-        message: status === 'APPROVED' 
-          ? `Congratulations! ${resort.name} is now live on HampiStays.`
-          : `Your resort listing ${resort.name} needs some changes before it can be approved.`,
-        type: 'info'
-      }
-    });
-
     res.json(resort);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPayouts = async (req, res, next) => {
+  try {
+    res.json([]); // Placeholder for payouts system
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSecurityStats = async (req, res, next) => {
+  try {
+    res.json({ logs: [], activeSessions: 1 }); // Placeholder
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFlaggedReviews = async (req, res, next) => {
+  try {
+    res.json([]); // Placeholder
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOtpLogs = async (req, res, next) => {
+  try {
+    res.json([]); // Placeholder
   } catch (error) {
     next(error);
   }

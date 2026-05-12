@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Wifi, Coffee, Utensils, Waves, 
   Shield, CheckCircle2, ArrowRight, ArrowLeft,
-  Clock, Plus, Trash2, Info, Camera, FileText, UploadCloud, X
+  Clock, Plus, Trash2, Info, Camera, FileText, UploadCloud, X, IndianRupee
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
+import { toast } from "react-hot-toast";
+import imageCompression from "browser-image-compression";
 
 export function ResortSetupPage() {
   const [step, setStep] = useState(1);
@@ -17,23 +20,31 @@ export function ResortSetupPage() {
   const { user } = useAuth();
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    tagline: "",
-    description: "",
-    area: "",
-    price: "",
-    type: "luxury",
-    category: "Heritage",
-    amenities: [] as string[],
-    houseRules: [] as string[],
-    mealPackages: [] as { name: string, price: number, description: string }[],
-    roomTypes: [] as { name: string, description: string, pricePerNight: number, capacity: number, availableCount: number }[],
-    images: [] as string[],
-    documents: [] as { type: string, url: string }[],
-    checkInTime: "1:00 PM",
-    checkOutTime: "11:00 AM"
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("hampi-resort-setup-draft");
+    return saved ? JSON.parse(saved) : {
+      name: "",
+      tagline: "",
+      description: "",
+      area: "",
+      price: "",
+      type: "luxury",
+      category: "Heritage",
+      amenities: [] as string[],
+      houseRules: [] as string[],
+      mealPackages: [] as { name: string, price: number, description: string }[],
+      roomTypes: [] as { name: string, description: string, pricePerNight: number, capacity: number, availableCount: number }[],
+      images: [] as string[],
+      documents: [] as { type: string, url: string }[],
+      checkInTime: "1:00 PM",
+      checkOutTime: "11:00 AM"
+    };
   });
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    localStorage.setItem("hampi-resort-setup-draft", JSON.stringify(formData));
+  }, [formData]);
 
   const amenitiesList = [
     { id: "Wifi", icon: Wifi },
@@ -139,7 +150,13 @@ export function ResortSetupPage() {
       setStep(prev => prev + 1);
       window.scrollTo(0, 0);
     } else {
-      alert("Every field is mandatory. Please fill all inputs to proceed.");
+      let msg = "Please fill all required fields in this section.";
+      if (step === 5 && formData.roomTypes.length === 0) msg = "Please add at least one room type.";
+      if (step === 7) {
+        if (formData.images.length < 3) msg = "Please upload at least 3 resort photos.";
+        else msg = "Please upload all three mandatory documents (ID, GST, and Property Tax).";
+      }
+      toast.error(msg);
     }
   };
   const handleBack = () => {
@@ -148,31 +165,29 @@ export function ResortSetupPage() {
   };
 
   const handlePublish = async () => {
-    if (!user) return;
-    if (!isStepValid()) {
-      alert("Every field is mandatory. Please ensure all details are filled before submitting.");
+    if (!user) {
+      toast.error("Please login to submit a property");
       return;
     }
-    setIsPublishing(true);
-    try {
-      const response = await fetch("/api/resorts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          ownerId: user.id
-        }),
-      });
+    if (!isStepValid()) {
+      toast.error("Verification pending: Please ensure 3+ photos and all 3 documents are uploaded.");
+      return;
+    }
 
-      if (response.ok) {
-        navigate("/dashboard");
-      } else {
-        const error = await response.json();
-        alert(error.error || "Failed to publish resort");
-      }
+    // Payload size check removed for testing mode
+    const payload = { ...formData, ownerId: user?.id };
+
+    setIsPublishing(true);
+    const toastId = toast.loading("Launching your sanctuary in Hampi...");
+    
+    try {
+      await apiClient.post('/resorts', payload);
+      localStorage.removeItem("hampi-resort-setup-draft");
+      toast.success("HampiStays Sanctuary Launched Successfully!", { id: toastId });
+      navigate("/dashboard");
     } catch (error: any) {
       console.error("Publish error:", error);
-      alert("Something went wrong. Please check if the server is running.");
+      toast.error(error.message || "Failed to publish resort", { id: toastId });
     } finally {
       setIsPublishing(false);
     }
@@ -411,6 +426,7 @@ export function ResortSetupPage() {
                             </button>
                           </div>
                         ))}
+
                         {formData.images.length < 10 && (
                           <label className="aspect-square rounded-2xl border-2 border-dashed border-sand-200 flex flex-col items-center justify-center gap-2 text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
                             <input 
@@ -420,18 +436,25 @@ export function ResortSetupPage() {
                               className="hidden" 
                               onChange={async (e) => {
                                 const files = Array.from(e.target.files || []);
-                                const base64Promises = files.map(file => {
-                                  return new Promise<string>((resolve) => {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => resolve(reader.result as string);
-                                    reader.readAsDataURL(file);
+                                
+                                try {
+                                  const base64Promises = files.map(file => {
+                                    return new Promise<string>((resolve) => {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => resolve(reader.result as string);
+                                      reader.readAsDataURL(file);
+                                    });
                                   });
-                                });
-                                const base64Images = await Promise.all(base64Promises);
-                                setFormData(p => ({
-                                  ...p,
-                                  images: [...p.images, ...base64Images].slice(0, 10)
-                                }));
+                                  const base64Images = await Promise.all(base64Promises);
+                                  
+                                  setFormData(p => ({
+                                    ...p,
+                                    images: [...p.images, ...base64Images].slice(0, 10)
+                                  }));
+                                  toast.success("Photos added!");
+                                } catch (err) {
+                                  toast.error("Upload failed");
+                                }
                               }}
                             />
                             <Camera className="w-6 h-6" />
@@ -468,14 +491,22 @@ export function ResortSetupPage() {
                                   onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => {
-                                      setFormData(p => {
-                                        const existing = p.documents.filter(d => d.type !== doc.id);
-                                        return { ...p, documents: [...existing, { type: doc.id, url: reader.result as string }] };
-                                      });
-                                    };
-                                    reader.readAsDataURL(file);
+                                    
+                                    toast.loading("Optimizing document...", { id: "doc-compress" });
+                                    try {
+                                      const compressed = await imageCompression(file, { maxSizeMB: 0.2, maxWidthOrHeight: 1200 });
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        setFormData(p => {
+                                          const existing = p.documents.filter(d => d.type !== doc.id);
+                                          return { ...p, documents: [...existing, { type: doc.id, url: reader.result as string }] };
+                                        });
+                                        toast.success("Document optimized!", { id: "doc-compress" });
+                                      };
+                                      reader.readAsDataURL(compressed);
+                                    } catch (err) {
+                                      toast.error("Upload failed", { id: "doc-compress" });
+                                    }
                                   }}
                                 />
                                 {isUploaded ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <UploadCloud className="w-5 h-5" />}

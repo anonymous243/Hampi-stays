@@ -16,6 +16,7 @@ import { AttractionsGuide } from "../../components/resort/AttractionsGuide";
 import { ResortMap } from "../../components/resort/ResortMap";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 import type { Resort } from "../../types/resort";
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
@@ -41,9 +42,7 @@ export function ResortDetailPage() {
       if (!slug) return;
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/resorts/${slug}`);
-        if (!response.ok) throw new Error('Resort not found');
-        const data = await response.json();
+        const data = await apiClient.get<any>(`/resorts/${slug}`);
 
         // Normalize backend schema to frontend types
         const normalized: Resort = {

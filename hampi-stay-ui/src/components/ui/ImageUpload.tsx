@@ -28,7 +28,7 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
     formData.append("image", file);
 
     try {
-      const response = await fetch("/api/upload", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
         method: "POST",
         body: formData,
       });

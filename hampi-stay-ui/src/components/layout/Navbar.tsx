@@ -36,7 +36,7 @@ export function Navbar() {
     
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    fetch("/api/settings")
+    fetch(`${import.meta.env.VITE_API_URL}/api/settings`)
       .then(res => res.json())
       .then(data => setGuideServiceEnabled(data.guideServiceEnabled))
       .catch(err => console.error(err));

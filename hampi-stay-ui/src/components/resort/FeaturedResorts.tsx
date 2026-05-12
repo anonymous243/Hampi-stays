@@ -14,7 +14,7 @@ export function FeaturedResorts() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const response = await fetch("/api/resorts/featured");
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/featured`);
         const data = await response.json();
         if (Array.isArray(data)) {
           setResorts(data);

@@ -183,9 +183,46 @@ function AnimatedRoutes() {
   );
 }
 
+import { Toaster } from "react-hot-toast";
+
 function App() {
   return (
     <Router>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#0A1128', // Luxury Navy
+            color: '#F5F1E9',      // Sand White
+            borderRadius: '1.5rem',
+            border: '1px solid rgba(197, 160, 89, 0.2)', // Subtle Gold border
+            padding: '16px 24px',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            fontFamily: 'Outfit, sans-serif',
+          },
+          success: {
+            iconTheme: {
+              primary: '#C5A059', // Gold
+              secondary: '#0A1128',
+            },
+            style: {
+              border: '1px solid #C5A059',
+            }
+          },
+          error: {
+            iconTheme: {
+              primary: '#EF4444', // Red for errors
+              secondary: '#FFFFFF',
+            },
+            style: {
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+            }
+          }
+        }}
+      />
       <ScrollToTop />
       <AnimatedRoutes />
       <AuthModal />

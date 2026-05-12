@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
+import { apiClient } from "../../utils/apiClient";
 
 const EXPERT_IMAGES = [
   "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
@@ -49,9 +50,7 @@ export function LocalExpertsPage() {
 
   const fetchGuides = async () => {
     try {
-      const res = await fetch('/api/guides');
-      if (!res.ok) throw new Error('API request failed');
-      const data = await res.json();
+      const data = await apiClient.get<Guide[]>('/guides');
       setGuides(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch guides", err);
@@ -74,31 +73,22 @@ export function LocalExpertsPage() {
     setIsBooking(true);
     try {
       const totalPrice = selectedGuide.pricePerDay * (bookingHours / 8);
-      const res = await fetch(`/api/guides/${selectedGuide.id}/book`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          guideId: selectedGuide.id,
-          date: bookingDate,
-          durationHours: bookingHours,
-          meetingPoint: bookingMeetingPoint,
-          totalPrice,
-        })
+      await apiClient.post(`/guides/${selectedGuide.id}/book`, {
+        userId: user.id,
+        guideId: selectedGuide.id,
+        date: bookingDate,
+        durationHours: bookingHours,
+        meetingPoint: bookingMeetingPoint,
+        totalPrice,
       });
-      if (res.ok) {
-        setBookingSuccess(true);
-        setBookingDate("");
-        setBookingMeetingPoint("");
-        setBookingHours(4);
-        setTimeout(() => {
-          setBookingSuccess(false);
-          setSelectedGuide(null);
-        }, 2500);
-      } else {
-        const err = await res.json();
-        console.error("Booking failed:", err);
-      }
+      setBookingSuccess(true);
+      setBookingDate("");
+      setBookingMeetingPoint("");
+      setBookingHours(4);
+      setTimeout(() => {
+        setBookingSuccess(false);
+        setSelectedGuide(null);
+      }, 2500);
     } catch (err) {
       console.error("Booking failed", err);
     } finally {

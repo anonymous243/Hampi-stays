@@ -17,6 +17,8 @@ import userRoutes from './routes/userRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import heritageRoutes from './routes/heritageRoutes.js';
 import experienceRoutes from './routes/experienceRoutes.js';
+import ownerRoutes from './routes/ownerRoutes.js';
+import guideRoutes from './routes/guideRoutes.js';
 
 
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -36,8 +38,8 @@ app.use(securityHeaders);
 app.use('/api', globalLimiter);
 
 // 2. Body Parsers & Sanitization
-app.use(express.json({ limit: '10mb' })); // Reduced limit for safety
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increased for high-res resort uploads
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(sanitizeRequest);
 
 // 3. CORS Configuration
@@ -72,6 +74,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/heritage', heritageRoutes);
 app.use('/api/experiences', experienceRoutes);
+app.use('/api/owners', ownerRoutes);
+app.use('/api/guides', guideRoutes);
 
 
 app.use('/api/upload', uploadRoutes);

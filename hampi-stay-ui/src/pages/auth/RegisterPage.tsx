@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { ArrowLeft, Luggage, Key, Check, Users, Mail, Smartphone, ShieldCheck, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -7,6 +7,7 @@ import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
+import { toast } from "react-hot-toast";
 
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
@@ -19,9 +20,10 @@ export function RegisterPage() {
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch(`${import.meta.env.VITE_API_URL}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (data && typeof data.guideServiceEnabled !== 'undefined') {
@@ -100,22 +102,24 @@ export function RegisterPage() {
     setError("");
     try {
       setIsVerifying(true);
-      const response = await fetch('/api/auth/check-email', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: role === "owner" ? "RESORT_OWNER" : "TRAVELLER"
+        }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Validation failed');
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
       
-      // Perform immediate registration instead of moving to Step 3
-      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
-      await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
-      
-      setVerifiedSuccess(true);
-      setTimeout(() => navigate("/dashboard"), 1200);
+      toast.success("Account created successfully! Please login.");
+      navigate("/login");
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsVerifying(false);
     }
@@ -125,10 +129,8 @@ export function RegisterPage() {
     setIsSendingOtp(true);
     setError("");
     try {
-      const endpoint = method === "email" ? '/api/auth/send-email-otp' : '/api/auth/send-mobile-otp';
-      const body = method === "email"
-        ? { email: formData.email }
-        : { phone: formData.phone };
+      const endpoint = `${import.meta.env.VITE_API_URL}/api/auth/send-otp`;
+      const body = { email: formData.email };
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,14 +165,12 @@ export function RegisterPage() {
       await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
 
       // Then verify OTP against backend
-      const res = await fetch('/api/auth/verify-otp', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           otp: enteredOtp,
-          otpType: verificationMethod === 'email' ? 'email' : 'mobile',
-          email: verificationMethod === 'email' ? formData.email : undefined,
-          phone: verificationMethod === 'sms' ? formData.phone : undefined,
+          email: formData.email,
         }),
       });
       const data = await res.json();
@@ -590,42 +590,8 @@ export function RegisterPage() {
                   className="space-y-8"
                 >
                   <div className="text-center">
-                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Security Verification</h2>
-                    <p className="text-navy-800/60 text-sm font-medium">Select your preferred method to verify your identity.</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => handleStartVerification("email")}
-                      className="w-full p-6 rounded-3xl border border-sand-200 bg-white/50 hover:bg-white hover:border-gold-300 transition-all flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gold-50 text-gold-600 flex items-center justify-center">
-                          <Check className="w-6 h-6" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-bold text-navy-950">Email Verification</p>
-                          <p className="text-xs text-navy-800/40">{formData.email}</p>
-                        </div>
-                      </div>
-                      <ArrowLeft className="w-5 h-5 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-
-                    <button
-                      onClick={() => handleStartVerification("sms")}
-                      className="w-full p-6 rounded-3xl border border-sand-200 bg-white/50 hover:bg-white hover:border-gold-300 transition-all flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-navy-50 text-navy-600 flex items-center justify-center">
-                          <Check className="w-6 h-6" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-bold text-navy-950">SMS Verification</p>
-                          <p className="text-xs text-navy-800/40">{formData.phone}</p>
-                        </div>
-                      </div>
-                      <ArrowLeft className="w-5 h-5 rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
+                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Email Verification</h2>
+                    <p className="text-navy-800/60 text-sm font-medium">Verify your email address to secure your account.</p>
                   </div>
                 </motion.div>
               ) : (

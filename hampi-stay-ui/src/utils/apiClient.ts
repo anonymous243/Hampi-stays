@@ -5,9 +5,16 @@ interface RequestOptions extends RequestInit {
 }
 
 export class ApiError extends Error {
-  constructor(public message: string, public status?: number, public data?: any) {
+  status?: number;
+  data?: any;
+
+  constructor(message: string, status?: number, data?: any) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+    // Set the prototype explicitly for custom errors in TS
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
@@ -69,6 +76,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   // 5. Handle HTTP Errors
   if (!response.ok) {
+    // If the token is invalid or expired, notify the app
+    if (response.status === 401 || response.status === 403) {
+      window.dispatchEvent(new CustomEvent('hampi-unauthorized'));
+    }
     throw new ApiError(data?.error || data?.message || 'An unexpected error occurred', response.status, data);
   }
 

@@ -11,6 +11,7 @@ import { Input } from "../../components/ui/Input";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
+import { apiClient } from "../../utils/apiClient";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
@@ -48,10 +49,12 @@ export function OwnerDashboard() {
   ]);
 
   const fetchResorts = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      const response = await fetch(`/api/owners/${user.id}/resorts`);
-      const data = await response.json();
+      const data = await apiClient.get<any[]>(`/owners/${user.id}/resorts`);
       setResorts(data);
     } catch (error) {
       console.error("Error fetching resorts:", error);
@@ -85,21 +88,15 @@ export function OwnerDashboard() {
     if (!resort) return;
     setIsLoadingAddingRoom(true);
     try {
-      const response = await fetch(`/api/resorts/${resort.id}/rooms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...roomFormData,
-          pricePerNight: parseFloat(roomFormData.pricePerNight),
-          capacity: parseInt(roomFormData.capacity),
-          availableCount: parseInt(roomFormData.availableCount)
-        }),
+      await apiClient.post(`/resorts/${resort.id}/rooms`, {
+        ...roomFormData,
+        pricePerNight: parseFloat(roomFormData.pricePerNight),
+        capacity: parseInt(roomFormData.capacity),
+        availableCount: parseInt(roomFormData.availableCount)
       });
-      if (response.ok) {
-        setShowAddRoom(false);
-        setRoomFormData({ name: "", description: "", pricePerNight: "", capacity: "2", availableCount: "1" });
-        fetchResorts();
-      }
+      setShowAddRoom(false);
+      setRoomFormData({ name: "", description: "", pricePerNight: "", capacity: "2", availableCount: "1" });
+      fetchResorts();
     } catch (error) {
       console.error(error);
     } finally {
@@ -109,11 +106,7 @@ export function OwnerDashboard() {
 
   const handleDeletePhoto = async (resortId: string, photoUrl: string) => {
     try {
-      await fetch(`/api/resorts/${resortId}/photos`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: photoUrl })
-      });
+      await apiClient.delete(`/resorts/${resortId}/photos`, { body: { url: photoUrl } });
       fetchResorts();
     } catch (error) {
       console.error(error);
@@ -430,7 +423,7 @@ export function OwnerDashboard() {
   const fetchStaffData = async () => {
     if (!resorts.length) return;
     try {
-      const res = await fetch(`/api/admin/staff/invitations/${resorts[0].id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/staff/invitations/${resorts[0].id}`);
       if (res.ok) setPendingInvitations(await res.json());
     } catch (error) {
       console.error("Failed to fetch staff data:", error);
@@ -440,20 +433,14 @@ export function OwnerDashboard() {
   const handleSendInvite = async () => {
     if (!inviteEmail || !resorts.length) return;
     try {
-      const res = await fetch('/api/admin/staff/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-          resortId: resorts[0].id
-        })
+      await apiClient.post('/admin/staff/invite', {
+        email: inviteEmail,
+        role: inviteRole,
+        resortId: resorts?.[0]?.id
       });
-      if (res.ok) {
-        setInviteEmail("");
-        setIsInviteModalOpen(false);
-        fetchStaffData();
-      }
+      setInviteEmail("");
+      setIsInviteModalOpen(false);
+      fetchStaffData();
     } catch (error) {
       console.error("Failed to send invite:", error);
     }
@@ -482,29 +469,27 @@ export function OwnerDashboard() {
   const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'checkin' | 'checkout') => {
     try {
       const endpoint = action === 'confirm' || action === 'reject' 
-        ? `/api/bookings/${bookingId}/${action}`
-        : `/api/bookings/${bookingId}/status`;
+        ? `/bookings/${bookingId}/${action}`
+        : `/bookings/${bookingId}/status`;
       
-      const response = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: action === 'checkin' || action === 'checkout' ? JSON.stringify({ status: action === 'checkin' ? 'CHECKED_IN' : 'COMPLETED' }) : undefined
-      });
-      if (response.ok) {
-        // If check-in is successful, trigger the welcome greeting
-        if (action === 'checkin') {
-          try {
-            await fetch(`/api/bookings/${bookingId}/welcome-greet`, { method: 'POST' });
-          } catch (err) {
-            console.error("Failed to trigger welcome greeting:", err);
-          }
+      const payload = action === 'checkin' || action === 'checkout' 
+        ? { status: action === 'checkin' ? 'CHECKED_IN' : 'COMPLETED' } 
+        : undefined;
+
+      await apiClient.patch(endpoint, payload);
+      
+      // If check-in is successful, trigger the welcome greeting
+      if (action === 'checkin') {
+        try {
+          await apiClient.post(`/bookings/${bookingId}/welcome-greet`);
+        } catch (err) {
+          console.error("Failed to trigger welcome greeting:", err);
         }
-        fetchResorts();
-      } else {
-        alert("Failed to update booking status.");
       }
+      fetchResorts();
     } catch (error) {
       console.error("Network error:", error);
+      alert("Failed to update booking status.");
     }
   };
 
@@ -513,20 +498,13 @@ export function OwnerDashboard() {
     if (!newMessage.trim() || !activeMessageBooking) return;
     
     try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: newMessage,
-          senderId: user?.id,
-          bookingId: activeMessageBooking.id
-        })
+      const savedMsg = await apiClient.post<any>('/messages', {
+        text: newMessage,
+        senderId: user?.id,
+        bookingId: activeMessageBooking.id
       });
-      if (response.ok) {
-        const savedMsg = await response.json();
-        setMessages(prev => [...prev, savedMsg]);
-        setNewMessage("");
-      }
+      setMessages(prev => [...prev, savedMsg]);
+      setNewMessage("");
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -537,7 +515,7 @@ export function OwnerDashboard() {
     if (activeTab === 'inbox' && activeMessageBooking) {
       const fetchMessages = async () => {
         try {
-          const res = await fetch(`/api/messages/${activeMessageBooking.id}`);
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/${activeMessageBooking.id}`);
           if (res.ok) setMessages(await res.json());
         } catch (err) {
           console.error("Poll failed", err);
@@ -667,7 +645,7 @@ export function OwnerDashboard() {
               onClick={async () => {
                 if (window.confirm("Are you sure you want to permanently delete this resort and all its data? This cannot be undone.")) {
                   try {
-                    const res = await fetch(`/api/resorts/${resort.id}`, { method: 'DELETE' });
+                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/${resort.id}`, { method: 'DELETE' });
                     if (res.ok) {
                       setActiveResortIdx(0);
                       fetchResorts();

@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 
 const USD_RATE = 0.012; // 1 INR ≈ 0.012 USD
 
@@ -84,34 +85,23 @@ export function CheckoutPage() {
       ].filter(Boolean).join("; ");
 
       // 1. Create Booking on Backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          resortId: bookingData.resortId,
-          roomId: bookingData.roomId,
-          checkIn: bookingData.checkIn,
-          checkOut: bookingData.checkOut,
-          guests: bookingData.adults,
-          totalPrice: grandTotal,
-          specialRequests: allRequests,
-          phone: guestInfo.phone,
-          customerName: guestInfo.name
-        }),
+      const booking = await apiClient.post<any>('/bookings', {
+        userId: user?.id,
+        resortId: bookingData.resortId,
+        roomId: bookingData.roomId,
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        guests: bookingData.adults,
+        totalPrice: grandTotal,
+        specialRequests: allRequests,
+        phone: guestInfo.phone,
+        customerName: guestInfo.name
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create booking on server.");
-      }
-      
-      const booking = await response.json();
 
       // 2. Launch Razorpay Checkout
       if (booking.razorpayOrderId) {
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Use env variable
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           name: "HampiStays Luxury",
@@ -119,20 +109,17 @@ export function CheckoutPage() {
           image: "/logo-full.png",
           order_id: booking.razorpayOrderId,
           handler: async function (response: any) {
-            // Verify Payment
-            const verifyRes = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/${booking.referenceNumber}/verify-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
+            try {
+              // Verify Payment
+              await apiClient.post(`/bookings/${booking.referenceNumber}/verify-payment`, {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature
-              })
-            });
+              });
 
-            if (verifyRes.ok) {
               navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
-            } else {
+            } catch (err: any) {
+              console.error("Verification failed", err);
               alert("Payment verification failed. Please contact support.");
             }
           },

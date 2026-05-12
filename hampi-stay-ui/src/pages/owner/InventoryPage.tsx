@@ -26,9 +26,12 @@ export function InventoryPage() {
   const [blockReason, setBlockReason] = useState("");
 
   const fetchResorts = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      const response = await fetch(`/api/owners/${user.id}/resorts`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/owners/${user.id}/resorts`);
       const data = await response.json();
       setResorts(data);
     } catch (error) {
@@ -67,7 +70,7 @@ export function InventoryPage() {
     if (!room || selectedDates.length === 0 || !overridePrice) return;
     setIsSaving(true);
     try {
-      await fetch(`/api/rooms/${room.id}/price-overrides`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/rooms/${room.id}/price-overrides`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -92,7 +95,7 @@ export function InventoryPage() {
     if (!room || selectedDates.length === 0) return;
     setIsSaving(true);
     try {
-      await fetch(`/api/rooms/${room.id}/blockings`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/rooms/${room.id}/blockings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,7 +125,7 @@ export function InventoryPage() {
     if (!resort) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/resorts/${resort.id}/discount-codes`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/resorts/${resort.id}/discount-codes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newDiscount)

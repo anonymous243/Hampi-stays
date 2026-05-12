@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 
 type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions";
 
@@ -45,14 +46,14 @@ export function AdminDashboard() {
       interval = setInterval(async () => {
         try {
           if (activeTab === 'security') {
-            const res = await fetch("/api/admin/security/stats");
-            if (res.ok) setSecurityData(await res.json());
+            const data = await apiClient.get<any>('/admin/security/stats');
+            setSecurityData(data);
           } else if (activeTab === 'otp-logs') {
-            const res = await fetch("/api/admin/otp-logs");
-            if (res.ok) setOtpLogs(await res.json());
+            const data = await apiClient.get<any[]>('/admin/otp-logs');
+            setOtpLogs(data);
           } else if (activeTab === 'overview') {
-            const res = await fetch("/api/admin/stats");
-            if (res.ok) setStats(await res.json());
+            const data = await apiClient.get<any>('/admin/stats');
+            setStats(data);
           }
         } catch (err) {
           console.error("Real-time poll failed", err);
@@ -65,40 +66,31 @@ export function AdminDashboard() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes, otpLogsRes] = await Promise.all([
-        fetch("/api/admin/resorts/pending"),
-        fetch("/api/admin/resorts/active"),
-        fetch("/api/users/list"),
-        fetch("/api/admin/stats"),
-        fetch("/api/admin/bookings/all"),
-        fetch("/api/admin/guides"),
-        fetch("/api/settings"),
-        fetch("/api/admin/payouts"),
-        fetch("/api/admin/security/stats"),
-        fetch("/api/admin/reviews/flagged"),
-        fetch("/api/admin/otp-logs")
+      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes, reviewsRes, otpLogsRes] = await Promise.all([
+        apiClient.get<any[]>('/admin/resorts/pending'),
+        apiClient.get<any[]>('/admin/resorts/active'),
+        apiClient.get<any[]>('/admin/users'),
+        apiClient.get<any>('/admin/stats'),
+        apiClient.get<any[]>('/admin/bookings/all'),
+        apiClient.get<any[]>('/admin/guides'),
+        apiClient.get<any>('/settings'),
+        apiClient.get<any[]>('/admin/payouts'),
+        apiClient.get<any>('/admin/security/stats'),
+        apiClient.get<any[]>('/admin/reviews/flagged'),
+        apiClient.get<any[]>('/admin/otp-logs')
       ]);
       
-      if (pendingRes.ok) setPendingResorts(await pendingRes.json());
-      if (activeRes.ok) setActiveResorts(await activeRes.json());
-      if (usersRes.ok) setAllUsers(await usersRes.json());
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (bookingsRes.ok) setAllBookings(await bookingsRes.json());
-      if (guidesRes.ok) {
-        const guidesData = await guidesRes.json();
-        setAllGuides(Array.isArray(guidesData) ? guidesData : []);
-      }
-      if (payoutsRes.ok) setPendingPayouts(await payoutsRes.json());
-      if (securityRes.ok) setSecurityData(await securityRes.json());
-      if (otpLogsRes.ok) setOtpLogs(await otpLogsRes.json());
-      if (pendingRes.ok && usersRes.ok) { // Check for reviews res
-          const reviewsRes = await fetch("/api/admin/reviews/flagged");
-          if (reviewsRes.ok) setFlaggedReviews(await reviewsRes.json());
-      }
-      if (settingsRes.ok) {
-        const settings = await settingsRes.json();
-        setGuideServiceEnabled(settings.guideServiceEnabled);
-      }
+      setPendingResorts(pendingRes);
+      setActiveResorts(activeRes);
+      setAllUsers(usersRes);
+      setStats(statsRes);
+      setAllBookings(bookingsRes);
+      setAllGuides(guidesRes);
+      setPendingPayouts(payoutsRes);
+      setSecurityData(securityRes);
+      setOtpLogs(otpLogsRes);
+      setFlaggedReviews(reviewsRes);
+      setGuideServiceEnabled(settingsRes.guideServiceEnabled);
     } catch (err) {
       console.error(err);
     } finally {
@@ -109,17 +101,7 @@ export function AdminDashboard() {
   const handleGuideStatus = async (profileId: string, status: "APPROVED" | "REJECTED") => {
     setProcessingId(profileId);
     try {
-      const res = await fetch(`/api/admin/guides/${profileId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${res.status}`);
-      }
-
+      await apiClient.patch(`/admin/guides/${profileId}/status`, { status });
       setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
     } catch (err: any) {
       console.error("Guide Status Update Error:", err);
@@ -132,20 +114,14 @@ export function AdminDashboard() {
   const handleStatusUpdate = async (id: string, status: "APPROVED" | "REJECTED") => {
     setProcessingId(id);
     try {
-      const res = await fetch(`/api/admin/resorts/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-      if (res.ok) {
-        // Refresh both lists
-        const [p, a] = await Promise.all([
-          fetch("/api/admin/resorts/pending").then(r => r.json()),
-          fetch("/api/admin/resorts/active").then(r => r.json())
-        ]);
-        setPendingResorts(p);
-        setActiveResorts(a);
-      }
+      await apiClient.patch(`/admin/resorts/${id}/status`, { status });
+      // Refresh both lists
+      const [p, a] = await Promise.all([
+        apiClient.get<any[]>('/admin/resorts/pending'),
+        apiClient.get<any[]>('/admin/resorts/active')
+      ]);
+      setPendingResorts(p);
+      setActiveResorts(a);
     } catch (err) {
       console.error(err);
     } finally {
@@ -156,7 +132,7 @@ export function AdminDashboard() {
   const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
     setProcessingId(id);
     try {
-      const res = await fetch(`/api/admin/resorts/${id}/feature`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/resorts/${id}/feature`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isFeatured: !currentStatus })
@@ -180,19 +156,34 @@ export function AdminDashboard() {
     if (!editingUser) return;
     setIsSavingUser(true);
     try {
-      const res = await fetch(`/api/users/${editingUser.id}`, {
-        method: "PATCH",
+      const isNew = editingUser.id === 'new';
+      const endpoint = isNew 
+        ? `${import.meta.env.VITE_API_URL}/api/auth/register`
+        : `${import.meta.env.VITE_API_URL}/api/users/${editingUser.id}`;
+      
+      const res = await fetch(endpoint, {
+        method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingUser)
+        body: JSON.stringify({
+          ...editingUser,
+          password: isNew ? "Hampi123!" : undefined // Default password for admin-created users
+        })
       });
+      
       if (res.ok) {
-        const updated = await res.json();
-        setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+        const result = await res.json();
+        const userToDisplay = result.user || result;
+        if (isNew) {
+          setAllUsers(prev => [userToDisplay, ...prev]);
+          alert("User created successfully! Default password is: Hampi123!");
+        } else {
+          setAllUsers(prev => prev.map(u => u.id === userToDisplay.id ? userToDisplay : u));
+        }
         setEditingUser(null);
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to update user");
+      alert("Action failed");
     } finally {
       setIsSavingUser(false);
     }
@@ -203,7 +194,7 @@ export function AdminDashboard() {
     
     setProcessingId(userId);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, { method: "DELETE" });
       if (res.ok) {
         setAllUsers(prev => prev.filter(u => u.id !== userId));
       }
@@ -241,7 +232,7 @@ export function AdminDashboard() {
   const handleUpdateCommission = async (resortId: string) => {
     setIsSavingCommission(true);
     try {
-      const res = await fetch(`/api/admin/resorts/${resortId}/commission`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/resorts/${resortId}/commission`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commissionRate: newCommissionRate })
@@ -630,7 +621,7 @@ export function AdminDashboard() {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         try {
-          const res = await fetch("/api/admin/settings", {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/settings`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ guideServiceEnabled: nextStatus }),
@@ -666,7 +657,7 @@ export function AdminDashboard() {
   const handleGuideActiveToggle = async (profileId: string, currentStatus: boolean) => {
     setProcessingId(profileId);
     try {
-      const res = await fetch(`/api/admin/guides/${profileId}/toggle-active`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/guides/${profileId}/toggle-active`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !currentStatus })
@@ -696,7 +687,7 @@ export function AdminDashboard() {
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
         try {
-          const res = await fetch(`/api/admin/guides/toggle-all`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/guides/toggle-all`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ isActive: status }),
@@ -1000,7 +991,10 @@ export function AdminDashboard() {
     <div className="bg-white rounded-[2.5rem] border border-sand-200 shadow-sm overflow-hidden">
       <div className="p-8 border-b border-sand-100 flex items-center justify-between">
         <h3 className="text-xl font-bold text-navy-950">Platform Users</h3>
-        <Button className="bg-navy-950 text-white gap-2">
+        <Button 
+          onClick={() => setEditingUser({ name: '', email: '', role: 'TRAVELLER', id: 'new' })}
+          className="bg-navy-950 text-white gap-2"
+        >
           <Users className="w-4 h-4" />
           Add User
         </Button>
