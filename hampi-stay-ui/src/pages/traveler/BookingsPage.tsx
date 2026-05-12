@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
+import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
