@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import toast from "react-hot-toast";
 import { useLocation, Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -138,7 +139,7 @@ export function CheckoutPage() {
               navigate(`/checkout/success?order_id=${booking.referenceNumber}`);
             } catch (err: any) {
               console.error("Verification failed", err);
-              alert("Payment verification failed. Please contact support.");
+              toast.error("Payment verification failed. Please contact support.");
               setIsProcessing(false);
             }
           },
@@ -156,7 +157,7 @@ export function CheckoutPage() {
         
         rzp.on('payment.failed', function (response: any) {
           console.error("Payment failed:", response.error);
-          alert(`Payment Failed: ${response.error.description}`);
+          toast.error(`Payment Failed: ${response.error.description}`);
           setIsProcessing(false);
         });
 
@@ -167,7 +168,7 @@ export function CheckoutPage() {
 
     } catch (err: any) {
       console.error("Payment error:", err);
-      alert(err.message || "Something went wrong. Please check your connection.");
+      toast.error(err.message || "Something went wrong. Please check your connection.");
     } finally {
       setIsProcessing(false);
     }

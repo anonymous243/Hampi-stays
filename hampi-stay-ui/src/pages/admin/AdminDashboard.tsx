@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
@@ -135,8 +136,7 @@ export function AdminDashboard() {
       await apiClient.patch(`/admin/guides/${profileId}/status`, { status });
       setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
     } catch (err: any) {
-      console.error("Guide Status Update Error:", err);
-      alert(`Error: ${err.message || 'Failed to update guide status'}`);
+      toast.error(`Error: ${err.message || 'Failed to update guide status'}`);
     } finally {
       setProcessingId(null);
     }
@@ -183,20 +183,19 @@ export function AdminDashboard() {
     try {
       const isNew = editingUser.id === 'new';
       
-      const userToDisplay = isNew 
+      const response = isNew 
         ? await apiClient.post<any>('/auth/register', { ...editingUser, password: "Hampi123!" })
         : await apiClient.patch<any>(`/users/${editingUser.id}`, editingUser);
       
       if (isNew) {
-        setAllUsers(prev => [userToDisplay, ...prev]);
-        alert("User created successfully! Default password is: Hampi123!");
+        toast.success("User created successfully! Default password is: Hampi123!");
+        setAllUsers(prev => [response, ...prev]);
       } else {
-        setAllUsers(prev => prev.map(u => u.id === userToDisplay.id ? userToDisplay : u));
+        setAllUsers(prev => prev.map(u => u.id === response.id ? response : u));
       }
       setEditingUser(null);
     } catch (err) {
-      console.error(err);
-      alert("Action failed");
+      toast.error("Action failed");
     } finally {
       setIsSavingUser(false);
     }
@@ -210,8 +209,7 @@ export function AdminDashboard() {
       await apiClient.delete(`/admin/users/${userId}`);
       setAllUsers(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
-      console.error(err);
-      alert("Failed to delete user");
+      toast.error("Failed to delete user");
     } finally {
       setProcessingId(null);
     }
@@ -248,7 +246,7 @@ export function AdminDashboard() {
       setEditingCommissionId(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to update commission rate");
+      toast.error("Failed to update commission rate");
     } finally {
       setIsSavingCommission(false);
     }
@@ -259,10 +257,10 @@ export function AdminDashboard() {
     try {
       const updated = await apiClient.post<any>('/admin/settings', { defaultCommissionRate });
       setDefaultCommissionRate(updated.defaultCommissionRate);
-      alert("Global default commission rate updated successfully!");
+      toast.success("Global default commission rate updated successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to update global commission rate");
+      toast.error("Failed to update global commission rate");
     } finally {
       setIsSavingGlobalCommission(false);
     }
@@ -641,8 +639,7 @@ export function AdminDashboard() {
           setGuideServiceEnabled(updatedSettings.guideServiceEnabled);
           setShowConfirmModal(false);
         } catch (err: any) {
-          console.error("System Toggle Error:", err);
-          alert(`Error: ${err.message || 'Could not connect to server'}`);
+          toast.error(`Error: ${err.message || 'Could not connect to server'}`);
         } finally {
           setProcessingId(null);
         }
@@ -657,8 +654,7 @@ export function AdminDashboard() {
       await apiClient.patch(`/admin/guides/${profileId}/toggle-active`, { isActive: !currentStatus });
       setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, isActive: !currentStatus } : g));
     } catch (err: any) {
-      console.error("Guide Toggle Error:", err);
-      alert(`Error: ${err.message || 'Failed to toggle guide visibility'}`);
+      toast.error(`Error: ${err.message || 'Failed to toggle guide visibility'}`);
     } finally {
       setProcessingId(null);
     }
@@ -675,8 +671,7 @@ export function AdminDashboard() {
           setAllGuides(prev => prev.map(g => ({ ...g, isActive: status })));
           setShowConfirmModal(false);
         } catch (err: any) {
-          console.error("Bulk Status Error:", err);
-          alert(`Error: ${err.message || 'Failed to update experts status'}`);
+          toast.error(`Error: ${err.message || 'Failed to update experts status'}`);
         } finally {
           setProcessingId(null);
         }

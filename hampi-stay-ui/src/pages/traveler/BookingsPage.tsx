@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
@@ -76,12 +77,12 @@ export function BookingsPage() {
     setCancellingId(bookingId);
     try {
       await apiClient.patch(`/bookings/${bookingId}/cancel`);
-      alert("Booking cancelled successfully.");
+      toast.success("Booking cancelled successfully.");
       await fetchBookings();
       setActiveTab("cancelled");
     } catch (err: any) {
       console.error(err);
-      alert(`Error: ${err.message || "Failed to cancel booking. Please try again."}`);
+      toast.error(`Error: ${err.message || "Failed to cancel booking. Please try again."}`);
     } finally {
       setCancellingId(null);
     }

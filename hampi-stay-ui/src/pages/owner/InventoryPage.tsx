@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, 
@@ -80,7 +81,7 @@ export function InventoryPage() {
         price: parseFloat(overridePrice),
         minNights: minNights ? parseInt(minNights) : null
       });
-      alert("Pricing & Rules updated successfully!");
+      toast.success("Pricing & Rules updated successfully!");
       setSelectedDates([]);
       setOverridePrice("");
       setMinNights("");
@@ -100,7 +101,7 @@ export function InventoryPage() {
         dates: selectedDates,
         reason: blockReason
       });
-      alert("Dates blocked successfully!");
+      toast.success("Dates blocked successfully!");
       setSelectedDates([]);
       setBlockReason("");
       fetchResorts();
@@ -123,7 +124,7 @@ export function InventoryPage() {
     setIsSaving(true);
     try {
       await apiClient.post(`/resorts/${resort.id}/discount-codes`, newDiscount);
-      alert("Discount code created!");
+      toast.success("Discount code created!");
       setShowDiscounts(false);
       setNewDiscount({ 
         code: "", percentage: "", flatAmount: "", validFrom: "", validUntil: "", maxUses: "",
@@ -161,7 +162,7 @@ export function InventoryPage() {
                 setIsLoading(true);
                 // Simulation: Mocking a sync with Google Calendar
                 setTimeout(() => {
-                  alert("Sync complete! 12 external dates imported from Google Calendar.");
+                  toast.success("Sync complete! 12 external dates imported from Google Calendar.");
                   setIsLoading(false);
                 }, 1500);
               }}>

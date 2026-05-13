@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -174,7 +175,7 @@ export function ResortDetailPage() {
                         }
                       } else {
                         navigator.clipboard.writeText(window.location.href);
-                        alert("Link copied to clipboard!");
+                        toast.success("Link copied to clipboard!");
                       }
                     }}
                     className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-sand-200 text-navy-950 font-bold text-sm hover:bg-sand-50 transition-all shadow-sm active:scale-95"

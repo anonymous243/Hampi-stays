@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -206,7 +207,7 @@ export function CheckoutSuccessPage() {
       doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
-      alert("Failed to generate PDF. Please download from your dashboard.");
+      toast.error("Failed to generate PDF. Please download from your dashboard.");
     } finally {
       setIsDownloading(false);
     }

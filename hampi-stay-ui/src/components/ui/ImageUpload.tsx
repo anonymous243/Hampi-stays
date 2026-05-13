@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import toast from "react-hot-toast";
 import { Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { cn } from "../../utils/cn";
 
@@ -37,9 +38,10 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
       if (!response.ok) throw new Error(data.error || "Upload failed");
 
       onUploadSuccess(data.url);
+      toast.success("Image uploaded successfully!");
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Please check your Cloudinary credentials.");
+      toast.error("Failed to upload image. Please check your Cloudinary credentials.");
       setPreview(null);
     } finally {
       setIsUploading(false);

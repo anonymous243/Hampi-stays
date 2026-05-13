@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Camera, ShieldCheck, Check, Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -141,8 +142,9 @@ export function ProfilePage() {
                         try {
                           const data = await apiClient.post<any>('/upload', uploadData);
                           setFormData(prev => ({...prev, avatar: data.url}));
+                          toast.success("Avatar updated successfully!");
                         } catch {
-                          alert("Failed to upload image. Please try again.");
+                          toast.error("Failed to upload image. Please try again.");
                         }
                       }}
                     />
@@ -324,7 +326,8 @@ export function ProfilePage() {
                             try {
                               const data = await apiClient.post<any>('/upload', uploadData);
                               setFormData(prev => ({...prev, idImage: data.url}));
-                            } catch { alert("Failed to upload document."); }
+                              toast.success("Document uploaded!");
+                            } catch { toast.error("Failed to upload document."); }
                           }}
                         />
                       )}

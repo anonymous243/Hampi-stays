@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { apiClient } from '../utils/apiClient';
 import type { Resort } from '../types/resort';
@@ -51,7 +52,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = async (resortId: string) => {
     if (!user) {
-      alert('Please login to save resorts to your wishlist.');
+      toast.error('Please login to save resorts to your wishlist.');
       return;
     }
 
@@ -69,7 +70,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         userId: user.id,
         resortId
       });
-
+      
+      if (response.saved) {
+        toast.success("Added to wishlist!");
+      } else {
+        toast.success("Removed from wishlist.");
+      }
+      
       // Re-fetch to be sure and get full data if added
       await fetchWishlist();
       

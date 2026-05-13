@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Building2, Plus, Calendar as CalIcon,
@@ -496,7 +497,7 @@ export function OwnerDashboard() {
       await fetchResorts();
     } catch (error) {
       console.error("Booking action failed:", error);
-      alert(error instanceof Error ? error.message : "Failed to update booking status.");
+      toast.error(error instanceof Error ? error.message : "Failed to update booking status.");
     } finally {
       setActionLoadingId(null);
     }
@@ -658,7 +659,7 @@ export function OwnerDashboard() {
                     setActiveResortIdx(0);
                     fetchResorts();
                   } catch (err) {
-                    alert("Failed to delete resort.");
+                    toast.error("Failed to delete resort.");
                   }
                 }
               }}
@@ -826,7 +827,8 @@ export function OwnerDashboard() {
                                           try {
                                             await apiClient.delete(`/rooms/${room.id}/photos`, { data: { url: img } });
                                             fetchResorts();
-                                          } catch (err) { alert("Error deleting photo"); }
+                                            toast.success("Photo deleted.");
+                                          } catch (err: any) { toast.error(err.response?.data?.message || "Error deleting photo"); }
                                         }
                                       }}
                                       className="absolute inset-0 bg-red-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
@@ -839,17 +841,18 @@ export function OwnerDashboard() {
                                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
+                                    if (file.size > 100 * 1024) {
+                                      toast.error("Image is too large! Please use a smaller image (under 100kb).");
+                                      return;
+                                    }
                                     const reader = new FileReader();
                                     reader.onloadend = async () => {
                                       try {
                                         await apiClient.post(`/rooms/${room.id}/photos`, { url: reader.result as string });
+                                        toast.success("Photo uploaded!");
                                         fetchResorts();
                                       } catch(err: any) {
-                                        if (err.message?.includes('413')) {
-                                          alert("Image is too large! Please use a smaller image.");
-                                        } else {
-                                          alert("Failed to upload room photo.");
-                                        }
+                                        toast.error("Failed to upload room photo.");
                                       }
                                     };
                                     reader.readAsDataURL(file);
@@ -876,18 +879,19 @@ export function OwnerDashboard() {
                           <input type="file" accept="image/*" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
+                            if (file.size > 100 * 1024) {
+                              toast.error("Image is too large! Please use a smaller image (under 100kb).");
+                              return;
+                            }
                             setIsUpdatingResortPhotos(true);
                             const reader = new FileReader();
                             reader.onloadend = async () => {
                               try {
                                 await apiClient.post(`/resorts/${resort.id}/photos`, { url: reader.result as string });
+                                toast.success("Photo uploaded successfully!");
                                 fetchResorts();
                               } catch(err: any) {
-                                if (err.message?.includes('413')) {
-                                  alert("Image is too large! Please use a smaller image (under 100kb).");
-                                } else {
-                                  alert("Failed to upload image.");
-                                }
+                                toast.error("Failed to upload image.");
                               } finally {
                                 setIsUpdatingResortPhotos(false);
                               }
