@@ -2,6 +2,7 @@
 name = "hampistays-api"
 main = "server/worker.js"
 compatibility_date = "2026-05-13"
+compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
 # DATABASE_URL should be a Prisma Accelerate URL for Cloudflare Workers
