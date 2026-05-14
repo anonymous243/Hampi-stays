@@ -224,7 +224,7 @@ export function ResortDetailPage() {
             <section className="mb-10">
               <h2 className="text-2xl font-bold font-serif text-navy-950 mb-5">What's included</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {resort.amenities.map((amenity: string) => (
+                {(resort.amenities || []).map((amenity: string) => (
                   <div
                     key={amenity}
                     className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-sand-100 shadow-sm"

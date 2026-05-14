@@ -162,14 +162,14 @@ export function ResortCard({
             </Link>
 
             <div className="flex flex-wrap gap-2 mb-5">
-              {resort.amenities.slice(0, 3).map((a) => (
+              {(resort.amenities || []).slice(0, 3).map((a) => (
                 <span key={a} className="px-3 py-1 bg-sand-50 text-navy-950/60 text-xs font-semibold rounded-lg border border-sand-100">
                   {a}
                 </span>
               ))}
-              {resort.amenities.length > 3 && (
+              {(resort.amenities || []).length > 3 && (
                 <span className="px-3 py-1 bg-sand-50 text-navy-950/50 text-xs font-semibold rounded-lg border border-sand-100">
-                  +{resort.amenities.length - 3} more
+                  +{(resort.amenities || []).length - 3} more
                 </span>
               )}
             </div>

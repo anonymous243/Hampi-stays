@@ -171,11 +171,13 @@ app.get('/resorts', async (c) => {
         type: true,
         locationArea: true,
         images: true,
+        amenities: true,
         rating: true,
         reviewCount: true,
         pricePerNight: true,
         category: true,
         isVerified: true,
+        isFeatured: true,
       }
     });
 

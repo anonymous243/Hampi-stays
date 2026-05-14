@@ -47,13 +47,14 @@ export const getAllResorts = async (req, res, next) => {
         tagline: true,
         type: true,
         locationArea: true,
-        images: true, // Still need images for the cover
+        images: true,
+        amenities: true,
         rating: true,
         reviewCount: true,
         pricePerNight: true,
         category: true,
         isVerified: true,
-        // Exclude: description, houseRules, mealPackages, verificationDocs
+        isFeatured: true,
       }
     });
 
