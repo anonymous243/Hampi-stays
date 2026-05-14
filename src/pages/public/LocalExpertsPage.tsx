@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
 import { apiClient } from "../../utils/apiClient";
