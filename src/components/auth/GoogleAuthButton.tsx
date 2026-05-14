@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import { cn } from "../../utils/cn";
 
 interface GoogleAuthButtonProps {
@@ -8,66 +8,117 @@ interface GoogleAuthButtonProps {
   text?: string;
 }
 
+// Add global type for google identity services
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
 export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with Google" }: GoogleAuthButtonProps) {
   const [isSwiped, setIsSwiped] = useState(false);
   const x = useMotionValue(0);
+  const controls = useAnimation();
   
   // Transform x position to various visual properties
-  const opacity = useTransform(x, [0, 150], [1, 0.3]);
-  const scale = useTransform(x, [0, 150], [1, 0.95]);
-  const glowOpacity = useTransform(x, [0, 150], [0, 1]);
+  // The slider track is about 200px
+  const opacity = useTransform(x, [0, 150], [1, 0]);
+  const scale = useTransform(x, [0, 150], [1, 0.9]);
+  const glowOpacity = useTransform(x, [0, 100, 200], [0, 0.5, 1]);
   const shineX = useTransform(x, [0, 200], ["-100%", "200%"]);
+  const iconScale = useTransform(x, [0, 180, 200], [1, 1.1, 1.2]);
 
-  const handleGoogleClick = () => {
-    // We'll use the standard Google Identity Services API for custom buttons
+  useEffect(() => {
+    // Initialize Google Identity Services if not already done
+    const clientId = "389686748462-nh36uj8ht8go4unb9607sclhgl1plb7r.apps.googleusercontent.com";
+    
     if (window.google) {
-      window.google.accounts.id.prompt();
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response: any) => {
+          if (response.credential) {
+            onSuccess(response.credential);
+          }
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+    }
+  }, [onSuccess]);
+
+  const triggerGoogleAuth = () => {
+    if (window.google) {
+      // Trigger the Google Identity Services prompt (One Tap or Select Account)
+      window.google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // If prompt isn't shown (e.g. blocked), we can't easily force it with a custom button 
+          // without rendering their official button, but we'll try to show the picker
+          try {
+             // Fallback: This is sometimes restricted but worth a try
+             window.google.accounts.id.renderButton(
+               document.getElementById('hidden-google-button'),
+               { theme: 'outline', size: 'large' }
+             );
+             document.querySelector<HTMLElement>('#hidden-google-button div[role="button"]')?.click();
+          } catch (e) {
+            console.error("Could not trigger Google Login", e);
+          }
+        }
+      });
+    }
+  };
+
+  const handleDragEnd = async (_: any, info: any) => {
+    if (info.offset.x > 140) {
+      setIsSwiped(true);
+      await controls.start({ x: 210, transition: { type: "spring", stiffness: 500, damping: 30 } });
+      triggerGoogleAuth();
+      
+      // Success feedback animation
+      setTimeout(() => {
+        controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
+        setIsSwiped(false);
+      }, 2000);
+    } else {
+      controls.start({ x: 0, transition: { type: "spring", stiffness: 400, damping: 25 } });
     }
   };
 
   return (
-    <div className="relative w-full max-w-sm mx-auto group">
+    <div className="relative w-full max-w-sm mx-auto group select-none">
+      {/* Hidden button for fallback triggers */}
+      <div id="hidden-google-button" className="hidden" />
+
       <motion.button
         type="button"
-        onClick={handleGoogleClick}
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.98 }}
+        onClick={triggerGoogleAuth}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.99 }}
         style={{ scale }}
-        disabled={isLoading}
+        disabled={isLoading || isSwiped}
         className={cn(
-          "relative w-full h-12 flex items-center justify-center gap-3 bg-white border border-sand-200 rounded-2xl overflow-hidden transition-all duration-500",
-          "hover:border-gold-400/50 hover:shadow-luxury group-active:scale-95",
-          isLoading && "opacity-70 cursor-not-allowed"
+          "relative w-full h-14 flex items-center justify-center gap-3 bg-white border border-sand-200 rounded-[1.25rem] overflow-hidden transition-all duration-500",
+          "hover:border-gold-400/50 hover:shadow-luxury group-active:border-gold-500/50",
+          (isLoading || isSwiped) && "opacity-70 cursor-not-allowed"
         )}
       >
         {/* Animated Shine Effect */}
         <motion.div 
           style={{ x: shineX }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] z-10"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-gold-400/10 to-transparent skew-x-[-20deg] z-10 pointer-events-none"
         />
 
         {/* Swipe Handle / Google Icon */}
         <motion.div
           drag="x"
-          dragConstraints={{ left: 0, right: 200 }}
-          dragElastic={0.1}
+          dragConstraints={{ left: 0, right: 210 }}
+          dragElastic={0.05}
+          animate={controls}
           style={{ x }}
-          onDragEnd={(_, info) => {
-            if (info.offset.x > 150) {
-              setIsSwiped(true);
-              handleGoogleClick();
-              // Reset after a delay
-              setTimeout(() => {
-                x.set(0);
-                setIsSwiped(false);
-              }, 1000);
-            } else {
-              x.set(0);
-            }
-          }}
-          className="absolute left-1.5 top-1.5 bottom-1.5 w-9 h-9 bg-white rounded-xl shadow-sm border border-sand-100 flex items-center justify-center z-20 cursor-grab active:cursor-grabbing hover:bg-sand-50 transition-colors"
+          onDragEnd={handleDragEnd}
+          className="absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 bg-white rounded-2xl shadow-premium border border-sand-100 flex items-center justify-center z-30 cursor-grab active:cursor-grabbing hover:bg-sand-50 transition-colors"
         >
-          <svg viewBox="0 0 24 24" className="w-5 h-5">
+          <motion.svg viewBox="0 0 24 24" className="w-6 h-6" style={{ scale: iconScale }}>
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -84,13 +135,13 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               fill="#EA4335"
             />
-          </svg>
+          </motion.svg>
         </motion.div>
 
         {/* Text */}
         <motion.span 
           style={{ opacity }}
-          className="text-sm font-bold text-navy-950/70 tracking-tight"
+          className="text-[13px] font-bold text-navy-950/80 tracking-tight z-20"
         >
           {isLoading ? "Authenticating..." : text}
         </motion.span>
@@ -98,16 +149,23 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         {/* Swipe Prompt Overlay */}
         <motion.div 
           style={{ opacity: glowOpacity }}
-          className="absolute inset-0 bg-gold-500/5 pointer-events-none"
+          className="absolute inset-0 bg-gold-500/10 pointer-events-none z-0"
         />
+
+        {/* Subtle Dots Track */}
+        <div className="absolute left-16 right-8 h-full flex items-center justify-around opacity-20 pointer-events-none">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="w-1 h-1 rounded-full bg-navy-950/40" />
+          ))}
+        </div>
       </motion.button>
       
       {/* Background Track Hint */}
-      <div className="absolute inset-x-1.5 top-1.5 bottom-1.5 bg-sand-50/50 rounded-xl -z-10 pointer-events-none border border-dashed border-sand-200/50 flex items-center justify-end pr-4">
+      <div className="absolute inset-x-1.5 top-1.5 bottom-1.5 bg-sand-100/30 rounded-2xl -z-10 pointer-events-none border border-dashed border-sand-300/40 flex items-center justify-end pr-6">
         <motion.div 
-          animate={{ x: [0, 5, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="text-[9px] font-black uppercase tracking-[0.2em] text-navy-950/10"
+          animate={{ x: [0, 8, 0], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          className="text-[8px] font-black uppercase tracking-[0.3em] text-navy-950/20"
         >
           Slide to Sign In
         </motion.div>
