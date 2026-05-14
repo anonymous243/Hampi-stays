@@ -91,21 +91,19 @@ export function BookingWidget({
   const handleBook = () => {
     if (!selectedRoomId || !checkIn || !checkOut) return;
     
-    protect(() => {
-      navigate("/checkout", {
-        state: {
-          resortId: resort.id,
-          resortName: resort.name,
-          roomId: selectedRoomId,
-          roomName: selectedRoom?.name,
-          checkIn,
-          checkOut,
-          adults,
-          totalPrice: total,
-          image: resort.images[0]
-        }
-      });
-    }, { message: "Complete Your Reservation", view: "register" });
+    navigate("/checkout", {
+      state: {
+        resortId: resort.id,
+        resortName: resort.name,
+        roomId: selectedRoomId,
+        roomName: selectedRoom?.name,
+        checkIn,
+        checkOut,
+        adults,
+        totalPrice: total,
+        image: resort.images[0]
+      }
+    });
   };
 
   return (
