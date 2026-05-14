@@ -527,7 +527,7 @@ export function RegisterPage() {
                       <div className="flex-grow border-t border-sand-200/60"></div>
                     </div>
 
-                    <div className="flex flex-col gap-3 mt-2">
+                    <div className="flex flex-col gap-4 mt-2">
                       <GoogleAuthButton 
                         onSuccess={(cred) => onGoogleSuccess({ credential: cred })}
                         isLoading={isVerifying}

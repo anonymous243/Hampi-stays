@@ -85,7 +85,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
   };
 
   return (
-    <div className="relative w-[85%] max-w-[320px] mx-auto group select-none">
+    <div className="relative w-[82%] max-w-[290px] mx-auto group select-none">
       {/* Hidden button for fallback triggers */}
       <div id="hidden-google-button" className="hidden" />
 

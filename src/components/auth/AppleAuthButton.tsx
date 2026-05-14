@@ -44,7 +44,7 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Continue with Ap
   };
 
   return (
-    <div className="relative w-[85%] max-w-[320px] mx-auto group select-none">
+    <div className="relative w-[82%] max-w-[290px] mx-auto group select-none">
       <motion.button
         type="button"
         onClick={triggerAppleAuth}
@@ -74,8 +74,8 @@ export function AppleAuthButton({ onSuccess, isLoading, text = "Continue with Ap
           onDragEnd={handleDragEnd}
           className="absolute left-1.5 top-1.5 bottom-1.5 w-11 h-11 bg-white rounded-2xl shadow-premium border border-gold-100 flex items-center justify-center z-30 cursor-grab active:cursor-grabbing hover:bg-sand-50 transition-colors"
         >
-          <motion.svg viewBox="0 0 24 24" className="w-6 h-6 fill-navy-950" style={{ scale: iconScale }}>
-            <path d="M17.05 20.28c-.96.95-2.04 1.78-3.32 1.78-1.2 0-1.63-.74-3.13-.74-1.48 0-1.99.72-3.13.72-1.28 0-2.45-.88-3.41-1.84C1.86 18.06.45 14.15.45 10.74c0-3.38 2.1-5.16 4.11-5.16 1.06 0 2.06.44 2.82.44.75 0 1.58-.41 2.8-.41 1.04 0 2.15.42 2.89 1.13-1.66 1.02-2.14 3.09-1.26 4.7.74 1.34 2.13 2.15 3.32 2.15.22 0 .43-.01.62-.05-.44 1.4-.92 2.65-1.7 3.54zm-2.95-15.1c0 2.02-1.67 3.65-3.6 3.65-.05 0-.09 0-.14-.01.07-2.02 1.76-3.62 3.64-3.62.05 0 .1 0 .1.01v.01-.04z"/>
+          <motion.svg viewBox="0 0 256 315" className="w-5 h-5 fill-navy-950" style={{ scale: iconScale }}>
+            <path d="M213.803 167.03c.442 47.58 41.74 63.413 42.147 63.615-.35 1.116-6.599 22.563-21.757 44.716-13.104 19.153-26.705 38.235-48.13 38.63-21.05.394-27.815-12.44-51.841-12.44-24.03 0-31.547 12.046-51.412 12.833-20.643.787-36.257-20.706-49.51-39.814C6.115 233.155-15.068 159.204 6.305 122.03c10.607-18.455 29.61-30.147 50.347-30.457 15.932-.31 30.932 10.703 40.697 10.703 9.76 0 27.76-13.16 46.85-11.233 8.013.332 30.547 3.226 44.995 24.4-1.155.717-26.9 15.684-26.623 46.683l.232 4.904zM155.903 59.29c8.583-10.42 14.343-24.89 12.763-39.29-12.353.5-27.27 8.213-36.13 18.633-7.933 9.176-14.863 24.036-13.003 38.1 13.8.106 27.793-7.023 36.37-17.443z" />
           </motion.svg>
         </motion.div>
 
