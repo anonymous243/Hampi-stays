@@ -25,9 +25,7 @@ const SPECIAL_REQUEST_OPTIONS = [
 ];
 
 const PAYMENT_METHODS = [
-  { id: "card", label: "Credit / Debit Card", sub: "Visa, Mastercard, Amex" },
-  { id: "upi", label: "UPI", sub: "GPay, PhonePe, Paytm" },
-  { id: "netbanking", label: "Net Banking", sub: "All major banks" },
+  { id: "secure", label: "Secure Payment Gateway", sub: "Cards, UPI, NetBanking, Wallets" },
 ];
 
 
@@ -325,59 +323,20 @@ export function CheckoutPage() {
                   className="bg-white rounded-[2.5rem] border border-sand-100 p-8 md:p-10 shadow-sm space-y-8">
                   <h2 className="text-2xl font-bold font-serif text-navy-950">Secure Payment</h2>
 
-                  {/* Payment Method Selection */}
-                  <div className="space-y-3">
-                    {PAYMENT_METHODS.map(method => (
-                      <button key={method.id} onClick={() => setPaymentMethod(method.id)}
-                        className={cn("w-full p-5 rounded-2xl border-2 flex items-center justify-between transition-all",
-                          paymentMethod === method.id ? "border-gold-500 bg-gold-50/30" : "border-sand-100 hover:border-gold-200")}>
-                        <div className="flex items-center gap-4">
-                          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center",
-                            paymentMethod === method.id ? "bg-navy-950" : "bg-sand-50")}>
-                            {method.id === "card" && <CreditCard className={cn("w-6 h-6", paymentMethod === method.id ? "text-white" : "text-navy-950/30")} />}
-                            {method.id === "upi" && <Wallet className={cn("w-6 h-6", paymentMethod === method.id ? "text-white" : "text-navy-950/30")} />}
-                            {method.id === "netbanking" && <Globe className={cn("w-6 h-6", paymentMethod === method.id ? "text-white" : "text-navy-950/30")} />}
-                          </div>
-                          <div className="text-left">
-                            <p className="font-bold text-navy-950">{method.label}</p>
-                            <p className="text-xs text-navy-950/40">{method.sub}</p>
-                          </div>
-                        </div>
-                        <div className={cn("w-5 h-5 rounded-full border-2 transition-all",
-                          paymentMethod === method.id ? "border-gold-500 bg-gold-500" : "border-sand-300")} />
-                      </button>
-                    ))}
+                  {/* Razorpay Integration Info */}
+                  <div className="p-6 rounded-3xl bg-sand-50 border border-sand-100 flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+                      <CreditCard className="w-6 h-6 text-gold-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-navy-950">Razorpay Secure Checkout</p>
+                      <p className="text-sm text-navy-950/50">You will be redirected to Razorpay's secure portal to complete your transaction using Cards, UPI, or NetBanking.</p>
+                    </div>
                   </div>
-
-                  {/* Card Details (shown if card selected) */}
-                  {paymentMethod === "card" && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                      <div className="md:col-span-2">
-                        <Input label="Card Number" placeholder="0000  0000  0000  0000" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Expiry Date" placeholder="MM / YY" />
-                        <Input label="CVV" placeholder="•••" />
-                      </div>
-                      <Input label="Name on Card" placeholder="John Doe" />
-                    </motion.div>
-                  )}
-
-                  {paymentMethod === "upi" && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <Input label="UPI ID" placeholder="yourname@upi" />
-                    </motion.div>
-                  )}
-
-                  {paymentMethod === "netbanking" && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-sand-50 rounded-2xl text-sm text-navy-950/60">
-                      You'll be redirected to your bank's secure portal to complete payment.
-                    </motion.div>
-                  )}
 
                   <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
                     <Button size="lg" className="w-full sm:w-auto px-12 h-14 shadow-gold" onClick={handlePayment} isLoading={isProcessing}>
-                      Pay {fmt(grandTotal)}
+                      Pay {fmt(grandTotal)} Securely
                     </Button>
                     <button onClick={() => setStep(2)} className="text-sm font-bold text-navy-950/40 hover:text-navy-950 transition-colors py-2">
                       Back to Add-ons

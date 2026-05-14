@@ -46,7 +46,7 @@ export function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-4xl mx-auto rounded-[2rem] shadow-luxury overflow-hidden relative group p-12 md:p-20 bg-navy-950/40 backdrop-blur-md border border-white/10"
+          className="max-w-4xl mx-auto rounded-2xl shadow-luxury overflow-hidden relative group p-12 md:p-20 bg-navy-950/40 backdrop-blur-md border border-white/10"
         >
           {/* Content */}
           <div className="relative z-10">

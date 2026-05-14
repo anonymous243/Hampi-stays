@@ -117,7 +117,7 @@ export function Testimonials() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-sand-100 border border-sand-200 shadow-sm p-8 rounded-[2rem] relative group hover:-translate-y-2 hover:shadow-luxury transition-all duration-500 flex flex-col"
+                className="bg-sand-100 border border-sand-200 shadow-sm p-8 rounded-2xl relative group hover:-translate-y-1.5 hover:shadow-luxury transition-all duration-500 flex flex-col"
               >
                 <Quote className="w-10 h-10 text-gold-500/10 absolute top-7 right-7 transition-transform duration-500 group-hover:scale-110 group-hover:text-gold-500/20" />
 

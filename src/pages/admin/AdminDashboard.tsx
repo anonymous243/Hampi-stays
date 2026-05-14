@@ -99,29 +99,8 @@ export function AdminDashboard() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, payoutsRes, securityRes, reviewsRes, otpLogsRes] = await Promise.all([
-        apiClient.get<any[]>('/admin/resorts/pending'),
-        apiClient.get<any[]>('/admin/resorts/active'),
-        apiClient.get<any[]>('/admin/users'),
-        apiClient.get<any>('/admin/stats'),
-        apiClient.get<any[]>('/admin/bookings/all'),
-        apiClient.get<any[]>('/admin/guides'),
-        apiClient.get<any[]>('/admin/payouts'),
-        apiClient.get<any>('/admin/security/stats'),
-        apiClient.get<any[]>('/admin/reviews/flagged'),
-        apiClient.get<any[]>('/admin/otp-logs')
-      ]);
-      
-      setPendingResorts(pendingRes);
-      setActiveResorts(activeRes);
-      setAllUsers(Array.isArray(usersRes) ? usersRes : []);
+      const statsRes = await apiClient.get<any>('/admin/stats');
       setStats(statsRes);
-      setAllBookings(bookingsRes);
-      setAllGuides(guidesRes);
-      setPendingPayouts(payoutsRes);
-      setSecurityData(securityRes);
-      setOtpLogs(otpLogsRes);
-      setFlaggedReviews(reviewsRes);
       setDefaultCommissionRate(settings?.defaultCommissionRate || 7.0);
     } catch (err) {
       console.error(err);
@@ -129,6 +108,58 @@ export function AdminDashboard() {
       setIsLoading(false);
     }
   };
+
+  const fetchTabData = async (tab: AdminTab) => {
+    try {
+      switch (tab) {
+        case 'properties':
+        case 'commissions':
+          const [pending, active] = await Promise.all([
+            apiClient.get<any[]>('/admin/resorts/pending'),
+            apiClient.get<any[]>('/admin/resorts/active')
+          ]);
+          setPendingResorts(pending);
+          setActiveResorts(active);
+          break;
+        case 'users':
+          const users = await apiClient.get<any[]>('/admin/users');
+          setAllUsers(Array.isArray(users) ? users : []);
+          break;
+        case 'guides':
+          const guides = await apiClient.get<any[]>('/admin/guides');
+          setAllGuides(guides);
+          break;
+        case 'bookings':
+          const bookings = await apiClient.get<any[]>('/admin/bookings/all');
+          setAllBookings(bookings);
+          break;
+        case 'payouts':
+          const payouts = await apiClient.get<any[]>('/admin/payouts');
+          setPendingPayouts(payouts);
+          break;
+        case 'security':
+          const sec = await apiClient.get<any>('/admin/security/stats');
+          setSecurityData(sec);
+          break;
+        case 'reviews':
+          const reviews = await apiClient.get<any[]>('/admin/reviews/flagged');
+          setFlaggedReviews(reviews);
+          break;
+        case 'otp-logs':
+          const logs = await apiClient.get<any[]>('/admin/otp-logs');
+          setOtpLogs(logs);
+          break;
+      }
+    } catch (err) {
+      console.error(`Failed to fetch data for tab: ${tab}`, err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'overview') {
+      fetchTabData(activeTab);
+    }
+  }, [activeTab]);
 
   const handleGuideStatus = async (profileId: string, status: "APPROVED" | "REJECTED") => {
     setProcessingId(profileId);

@@ -12,9 +12,10 @@ import { cn } from "../../utils/cn";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 
 const EXPERIENCE_IMAGES = [
-  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1545105511-921090367201?q=80&w=2070&auto=format&fit=crop"
+  "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
 ];
 
 interface Experience {
@@ -112,7 +113,7 @@ export function ExperiencesPage() {
     <div className="min-h-screen bg-sand-50 pb-32">
       {/* Hero Section */}
       <section className="relative h-[65vh] flex items-center justify-center overflow-hidden">
-        <ImmersiveBackground images={EXPERIENCE_IMAGES} />
+        <ImmersiveBackground images={EXPERIENCE_IMAGES} interval={3000} />
 
         <div className="container mx-auto px-4 relative z-10 text-center text-white">
           <motion.div

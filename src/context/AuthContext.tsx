@@ -28,6 +28,7 @@ interface AuthContextType {
   register: (name: string, email: string, phone: string, password: string, role: UserRole) => Promise<any>;
   updateUser: (updatedUser: User) => void;
   logout: () => void;
+  isVerifying: boolean;
   showAuthModal: boolean;
   setShowAuthModal: (show: boolean, view?: "login" | "register") => void;
   authModalView: "login" | "register";
@@ -38,6 +39,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [showAuthModal, _setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
 
@@ -58,33 +60,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("hampi-user");
-    const token = localStorage.getItem("hampi-token");
-    
-    if (savedUser && token) {
-      try {
-        setUser(JSON.parse(savedUser));
-        
-        apiClient.get<{ user: User }>('/auth/me')
-          .then(data => {
-            if (data && data.user) {
-              setUser(data.user);
-              localStorage.setItem("hampi-user", JSON.stringify(data.user));
-            }
-          })
-          .catch((err) => {
-            console.warn("Session verification failed:", err.message);
-            if (err.status === 401) logout();
-          })
-          .finally(() => setIsLoading(false));
-      } catch (e) {
-        console.error("Failed to parse saved user:", e);
-        logout();
+    const checkAuth = async () => {
+      const savedUser = localStorage.getItem("hampi-user");
+      const token = localStorage.getItem("hampi-token");
+      
+      if (token) {
+        setIsVerifying(true);
+        try {
+          if (savedUser) setUser(JSON.parse(savedUser));
+          
+          const data = await apiClient.get<{ user: User }>('/auth/me');
+          if (data?.user) {
+            setUser(data.user);
+            localStorage.setItem("hampi-user", JSON.stringify(data.user));
+          }
+        } catch (err: any) {
+          console.warn("Session verification failed:", err.message);
+          if (err.status === 401 || err.status === 403) {
+            logout();
+          }
+        } finally {
+          setIsVerifying(false);
+          setIsLoading(false);
+        }
+      } else {
         setIsLoading(false);
       }
-    } else {
-      setIsLoading(false);
-    }
+    };
+
+    checkAuth();
   }, []);
 
   const setShowAuthModal = (show: boolean, view: "login" | "register" = "login") => {
@@ -174,14 +178,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("hampi-user");
     localStorage.removeItem("hampi-token");
-    window.location.href = "/";
+    // Clear any sensitive state if necessary
+    window.dispatchEvent(new CustomEvent('hampi-logout'));
+    window.location.href = "/"; // Force refresh to clear all states for security
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       isLoading,
-      isAuthenticated: !!user, 
+      isVerifying,
+      isAuthenticated: !!user && !isVerifying, 
       login, 
       loginWithGoogle, 
       loginWithApple, 

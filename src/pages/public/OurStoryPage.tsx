@@ -14,8 +14,9 @@ import {
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 
 const STORY_IMAGES = [
-  "https://images.unsplash.com/photo-1545105511-921090367201?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
 ];
 
@@ -109,7 +110,7 @@ export function OurStoryPage() {
     <main className="min-h-screen bg-sand-50">
       {/* ── HERO ── */}
       <section className="relative pt-36 pb-20 overflow-hidden min-h-[60vh] flex items-center">
-        <ImmersiveBackground images={STORY_IMAGES} overlayColor="from-sand-50/90 via-sand-50/40 to-sand-50" />
+        <ImmersiveBackground images={STORY_IMAGES} interval={3000} overlayColor="from-sand-50/90 via-sand-50/40 to-sand-50" />
 
         <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
           <motion.div

@@ -6,6 +6,7 @@ import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useWishlist } from "../../context/WishlistContext";
+import { optimizeImage } from "../../utils/image";
 
 export function FeaturedResorts() {
   const { isFavorite, toggleWishlist } = useWishlist();
@@ -115,15 +116,15 @@ export function FeaturedResorts() {
                   delay: index * 0.15,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="group relative aspect-[3/4] overflow-hidden bg-navy-950 cursor-pointer rounded-[28px] shadow-luxury hover:shadow-luxury-hover transition-all duration-700 hover:-translate-y-2"
+                className="group relative aspect-[3/4] overflow-hidden bg-navy-950 cursor-pointer rounded-2xl shadow-luxury hover:shadow-luxury-hover transition-all duration-700 hover:-translate-y-1.5"
               >
                 {/* Image */}
                 <img
-                  src={imgErrors[resort.id] ? "/images/hampi-1.png" : (resort.images?.[0] || "/images/hampi-1.png")}
+                  src={optimizeImage(imgErrors[resort.id] ? "/images/hampi-1.png" : (resort.images?.[0] || "/images/hampi-1.png"), 800)}
                   alt={resort.name}
                   loading="lazy"
                   onError={() => setImgErrors(prev => ({ ...prev, [resort.id]: true }))}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[0.16,1,0.3,1] group-hover:scale-105 opacity-90 group-hover:opacity-100"
                 />
                 
                 {/* Cinematic Gradient */}

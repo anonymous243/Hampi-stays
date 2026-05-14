@@ -20,6 +20,7 @@ import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useWishlist } from "../../context/WishlistContext";
 import type { Resort } from "../../types/resort";
+import { optimizeImage } from "../../utils/image";
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
   WiFi: <Wifi className="w-5 h-5" />,
@@ -82,8 +83,18 @@ export function ResortDetailPage() {
   }, [slug]);
 
   if (isLoading) return (
-    <div className="min-h-screen flex items-center justify-center bg-sand-50">
-      <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-sand-50 pt-32">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="h-[420px] md:h-[560px] bg-sand-100 rounded-3xl animate-pulse mb-10" />
+        <div className="flex flex-col lg:flex-row gap-10">
+          <div className="flex-1 space-y-6">
+            <div className="h-12 w-3/4 bg-sand-200 rounded-2xl animate-pulse" />
+            <div className="h-6 w-1/2 bg-sand-100 rounded-xl animate-pulse" />
+            <div className="h-32 bg-sand-50 rounded-2xl animate-pulse" />
+          </div>
+          <div className="w-96 h-[500px] bg-sand-200 rounded-3xl animate-pulse hidden lg:block" />
+        </div>
+      </div>
     </div>
   );
 
@@ -107,26 +118,26 @@ export function ResortDetailPage() {
       </div>
 
       <div className="container mx-auto px-4 md:px-6 mb-8">
-        <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[420px] md:h-[560px] rounded-3xl overflow-hidden">
+        <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[420px] md:h-[560px] rounded-2xl overflow-hidden">
           <div
             className="col-span-4 md:col-span-2 row-span-2 relative cursor-pointer overflow-hidden"
             onClick={() => setGalleryIdx(0)}
           >
             <img
-              src={imgErrors['main'] ? "/images/hampi-1.png" : (images[galleryIdx] ?? images[0])}
+              src={imgErrors['main'] ? "/images/hampi-1.png" : optimizeImage(images[galleryIdx] ?? images[0], 1200)}
               alt={resort.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
               onError={() => setImgErrors(prev => ({ ...prev, ['main']: true }))}
             />
           </div>
           {images.slice(1, 5).map((img: string, i: number) => (
             <div
               key={img}
-              className="hidden md:block relative cursor-pointer overflow-hidden"
+              className="hidden md:block relative cursor-pointer overflow-hidden rounded-2xl"
               onClick={() => setGalleryIdx(i + 1)}
             >
               <img
-                src={imgErrors[`gallery-${i}`] ? "/images/hampi-2.png" : img}
+                src={imgErrors[`gallery-${i}`] ? "/images/hampi-2.png" : optimizeImage(img, 600)}
                 alt={`${resort.name} photo ${i + 2}`}
                 className={`w-full h-full object-cover hover:scale-105 transition-transform duration-700 ${galleryIdx === i + 1 ? "ring-4 ring-gold-500" : ""}`}
                 onError={() => setImgErrors(prev => ({ ...prev, [`gallery-${i}`]: true }))}
@@ -244,7 +255,7 @@ export function ResortDetailPage() {
                     <div
                       key={room.id}
                       className={cn(
-                        "group p-5 rounded-[2rem] border-2 transition-all duration-300 flex flex-col md:flex-row gap-6",
+                        "group p-5 rounded-2xl border-2 transition-all duration-300 flex flex-col md:flex-row gap-6",
                         isSelected
                           ? "bg-gold-50/50 border-gold-500 shadow-luxury"
                           : "bg-white border-sand-100 hover:border-gold-300"
@@ -252,9 +263,9 @@ export function ResortDetailPage() {
                     >
                       <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0 bg-sand-100">
                         <img
-                          src={room.images?.[0] || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=1000'}
+                          src={optimizeImage(room.images?.[0] || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=600', 600)}
                           alt={room.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/images/hampi-1.png';
                           }}

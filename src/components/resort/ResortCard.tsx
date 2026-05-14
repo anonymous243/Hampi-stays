@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useEffect } from "react";
 import { apiClient } from "../../utils/apiClient";
+import { optimizeImage } from "../../utils/image";
 
 interface ResortCardProps {
   resort: Resort;
@@ -93,16 +94,16 @@ export function ResortCard({
           rotateY,
           transformStyle: "preserve-3d",
         }}
-        className="group bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100 flex flex-col cursor-default"
+        className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 border border-sand-100 flex flex-col cursor-default"
       >
         {/* Image */}
         <Link to={`/resorts/${resort.slug}`} className="relative aspect-[4/3] overflow-hidden block" style={{ transform: "translateZ(30px)" }}>
           <img
-            src={imgError ? "/images/hampi-1.png" : resort.images[0]}
+            src={optimizeImage(imgError ? "/images/hampi-1.png" : resort.images[0], 600)}
             alt={resort.name}
             loading="lazy"
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover transition-transform duration-1000 ease-[0.16,1,0.3,1] group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-1000 ease-[0.16,1,0.3,1] group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 

@@ -109,14 +109,14 @@ export function Experiences() {
                 delay: index * 0.15,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="group relative rounded-[2.5rem] overflow-hidden shadow-md hover:shadow-luxury transition-all duration-700 hover:-translate-y-2 h-[500px]"
+              className="group relative rounded-2xl overflow-hidden shadow-md hover:shadow-luxury transition-all duration-700 hover:-translate-y-1.5 h-[500px]"
             >
               <img
                 src={imgErrors[exp.id] ? "/images/hampi-3.png" : (exp.image || "/images/hampi-3.png")}
                 alt={exp.title}
                 loading="lazy"
                 onError={() => setImgErrors(prev => ({ ...prev, [exp.id]: true }))}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] ease-[0.16,1,0.3,1] group-hover:scale-110"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-[0.16,1,0.3,1] group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-navy-950/95 via-navy-950/40 to-transparent" />
 

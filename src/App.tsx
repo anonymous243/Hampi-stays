@@ -50,12 +50,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-sand-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-sand-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/images/pattern.png')] opacity-[0.03] pointer-events-none" />
         <motion.div 
-          animate={{ rotate: 360 }} 
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-10 h-10 border-4 border-gold-500 border-t-transparent rounded-full"
-        />
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative flex flex-col items-center"
+        >
+          <img src="/logo-full.png" alt="HampiStays" className="h-20 w-auto object-contain mb-8 opacity-20 grayscale" />
+          <motion.div 
+            animate={{ 
+              rotate: 360,
+              borderColor: ["rgba(197, 160, 89, 0.2)", "rgba(197, 160, 89, 1)", "rgba(197, 160, 89, 0.2)"]
+            }} 
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            className="w-12 h-12 border-2 border-gold-500/20 border-t-gold-500 rounded-full"
+          />
+          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-navy-950/40">Secure Session</p>
+        </motion.div>
       </div>
     );
   }
@@ -205,17 +217,19 @@ function App() {
       <Toaster 
         position="top-right"
         toastOptions={{
-          duration: 4000,
+          duration: 5000,
           style: {
-            background: '#0A1128', // Luxury Navy
+            background: 'rgba(10, 17, 40, 0.95)', // Luxury Navy with slight transparency
+            backdropFilter: 'blur(16px)',
             color: '#F5F1E9',      // Sand White
-            borderRadius: '1.5rem',
-            border: '1px solid rgba(197, 160, 89, 0.2)', // Subtle Gold border
-            padding: '16px 24px',
-            fontSize: '14px',
+            borderRadius: '1.25rem',
+            border: '1px solid rgba(197, 160, 89, 0.3)', // Subtle Gold border
+            padding: '12px 20px',
+            fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             fontFamily: 'Outfit, sans-serif',
+            letterSpacing: '0.02em',
           },
           success: {
             iconTheme: {
@@ -223,16 +237,16 @@ function App() {
               secondary: '#0A1128',
             },
             style: {
-              border: '1px solid #C5A059',
+              border: '1px solid rgba(197, 160, 89, 0.5)',
             }
           },
           error: {
             iconTheme: {
-              primary: '#EF4444', // Red for errors
+              primary: '#EF4444', 
               secondary: '#FFFFFF',
             },
             style: {
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
             }
           }
         }}

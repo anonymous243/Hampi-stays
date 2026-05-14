@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
@@ -13,6 +13,7 @@ export function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
@@ -184,7 +185,7 @@ export function Navbar() {
                     )}
                     onClick={() => {
                       if (isAuthenticated) {
-                        window.location.href = "/resorts";
+                        navigate("/resorts");
                       } else {
                         setShowAuthModal(true, "register");
                       }
@@ -239,28 +240,51 @@ export function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className="text-navy-950 font-serif text-2xl font-bold border-b border-sand-200 pb-4 hover:text-gold-600 transition-colors"
+                  className="text-navy-950 font-serif text-xl sm:text-2xl font-bold border-b border-sand-200/60 pb-3 sm:pb-4 hover:text-gold-600 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.name}
                 </Link>
               ))}
-              <div className="flex flex-col gap-4 mt-2">
-                <Link
-                  to="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-center font-semibold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors block"
-                >
-                  Log in
-                </Link>
-                <Link to="/register" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="flex flex-col gap-3 sm:gap-4 mt-2">
+                {!isAuthenticated ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setShowAuthModal(true, "login");
+                      }}
+                      className="w-full text-center font-bold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors block text-sm"
+                    >
+                      Log in
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setShowAuthModal(true, "register");
+                      }}
+                      className="w-full"
+                    >
+                      <Button 
+                        size="lg" 
+                        className="w-full h-14 sm:h-16 rounded-2xl border-none shadow-gold text-sm"
+                      >
+                        Start Your Journey
+                      </Button>
+                    </button>
+                  </>
+                ) : (
                   <Button 
                     size="lg" 
-                    className="w-full h-16 rounded-2xl border-none transition-colors"
+                    className="w-full h-14 sm:h-16 rounded-2xl border-none shadow-gold text-sm"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      navigate("/dashboard");
+                    }}
                   >
-                    Register
+                    Go to Dashboard
                   </Button>
-                </Link>
+                )}
               </div>
             </div>
           </motion.div>

@@ -13,8 +13,9 @@ import { useSystem } from "../../context/SystemContext";
 
 const EXPERT_IMAGES = [
   "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000",
   "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?auto=format&fit=crop&q=80&w=2000",
-  "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=2000"
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?auto=format&fit=crop&q=80&w=2000"
 ];
 
 interface Guide {
@@ -136,7 +137,7 @@ export function LocalExpertsPage() {
     <div className="min-h-screen bg-sand-50">
       {/* Header Section */}
       <section className="relative pt-40 pb-20 overflow-hidden min-h-[70vh] flex items-center">
-        <ImmersiveBackground images={EXPERT_IMAGES} />
+        <ImmersiveBackground images={EXPERT_IMAGES} interval={3000} />
         <div className="container mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-6 shadow-sm">

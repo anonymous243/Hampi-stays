@@ -33,10 +33,15 @@ const authMiddleware = async (c, next) => {
   if (!authHeader?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, c.env.JWT_SECRET);
+    const secret = c.env.JWT_SECRET;
+    if (!secret) throw new Error("JWT_SECRET not configured");
+    const decoded = jwt.verify(token, secret);
     c.set('user', decoded);
     await next();
-  } catch (err) { return c.json({ error: 'Invalid token' }, 401); }
+  } catch (err) { 
+    console.error("Auth Middleware Error:", err.message);
+    return c.json({ error: 'Invalid or expired token' }, 401); 
+  }
 };
 
 const adminMiddleware = async (c, next) => {
@@ -421,12 +426,34 @@ app.get('/admin/otp-logs', authMiddleware, adminMiddleware, (c) => c.json([]));
 app.post('/bookings', authMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const data = await c.req.json();
-  const { userId, resortId, roomId, checkIn, checkOut, guests, totalPrice, specialRequests } = data;
+  const { resortId, roomId, checkIn, checkOut, guests, specialRequests, addInsurance, airportPickup } = data;
+  const payload = c.get('user');
   
   try {
+    // 1. RECALCULATE PRICE FOR SECURITY
+    const resort = await prisma.resort.findUnique({ 
+      where: { id: resortId },
+      include: { roomTypes: true }
+    });
+    
+    if (!resort) return c.json({ error: 'Resort not found' }, 404);
+    
+    const room = resort.roomTypes.find(r => r.id === roomId);
+    if (!room) return c.json({ error: 'Room type not found' }, 404);
+
+    const startDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const nightsTotal = room.pricePerNight * nights;
+    const taxes = Math.round(nightsTotal * 0.12);
+    const insuranceCost = addInsurance ? Math.round(nightsTotal * 0.02) : 0;
+    const airportPickupCost = airportPickup ? 800 : 0;
+    const totalPrice = nightsTotal + taxes + insuranceCost + airportPickupCost;
+
     const referenceNumber = `HST-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     
-    // Create Razorpay Order
+    // 2. Create Razorpay Order
     const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -441,19 +468,23 @@ app.post('/bookings', authMiddleware, async (c) => {
     });
     
     const order = await rzpResponse.json();
-    if (!order.id) throw new Error('Razorpay order creation failed');
+    if (!order.id) {
+      console.error("Razorpay Error:", order);
+      throw new Error(order.error?.description || 'Razorpay order creation failed');
+    }
 
     const booking = await prisma.booking.create({
       data: {
-        userId,
+        userId: payload.userId,
         resortId,
         roomId,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        guests,
+        checkIn: startDate,
+        checkOut: endDate,
+        guests: parseInt(guests) || 1,
         totalPrice,
         specialRequests,
         referenceNumber,
+        commissionRate: resort.commissionRate || 7.0,
         status: 'PENDING'
       }
     });
@@ -468,17 +499,48 @@ app.post('/bookings/:ref/verify-payment', authMiddleware, async (c) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = await c.req.json();
   
   try {
-    // Signature verification logic (simplified for edge)
-    // In production, use crypto.subtle to verify HMAC
-    if (!razorpay_signature) throw new Error('Invalid signature');
+    // 1. Secure Signature Verification using Web Crypto API
+    const secret = c.env.RAZORPAY_KEY_SECRET;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const key = await crypto.subtle.importKey(
+      'raw', 
+      encoder.encode(secret), 
+      { name: 'HMAC', hash: 'SHA-256' }, 
+      false, 
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, data);
+    const generatedSignature = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
-    await prisma.booking.update({
+    if (generatedSignature !== razorpay_signature) {
+      return c.json({ error: 'Invalid payment signature. Potential fraud detected.' }, 400);
+    }
+
+    // 2. Update Booking Status
+    const booking = await prisma.booking.update({
       where: { referenceNumber: ref },
-      data: { status: 'PAID' }
+      data: { status: 'PAID' },
+      include: { resort: true }
     });
 
-    return c.json({ success: true });
-  } catch (err) { return c.json({ error: err.message }, 500); }
+    // 3. Create Notification
+    await prisma.notification.create({
+      data: {
+        userId: booking.userId,
+        title: 'Booking Confirmed!',
+        message: `Payment successful for ${booking.resort.name}. Reference: ${ref}`,
+        type: 'booking'
+      }
+    });
+
+    return c.json({ success: true, booking });
+  } catch (err) { 
+    console.error("Verification Error:", err.message);
+    return c.json({ error: err.message }, 500); 
+  }
 });
 
 // Cloudinary Upload
@@ -501,6 +563,56 @@ app.post('/upload', authMiddleware, async (c) => {
     const result = await response.json();
     return c.json({ url: result.secure_url });
   } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+// Heritage & Discovery
+app.get('/heritage/poi', (c) => {
+  return c.json([
+    {
+      id: "vittala",
+      name: "Vittala Temple",
+      category: "Architecture",
+      x: 75,
+      y: 35,
+      description: "The architectural showpiece of Hampi, famous for its stone chariot and musical pillars.",
+      image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1200",
+      recommendedTours: ["Sunrise Chariot Walk", "Musical Pillars Acoustic Session"],
+      nearbyResort: "Evolve Back Kamalapura Palace"
+    },
+    {
+      id: "virupaksha",
+      name: "Virupaksha Temple",
+      category: "Heritage",
+      x: 25,
+      y: 45,
+      description: "The oldest functioning temple in Hampi, dedicated to Lord Shiva with its 50-meter gopuram.",
+      image: "https://images.unsplash.com/photo-1581012771300-224937651c42?auto=format&fit=crop&q=80&w=1200",
+      recommendedTours: ["Evening Aarti Experience", "Sacred Hampi Pilgrimage"],
+      nearbyResort: "Hampi's Boulders Resort"
+    },
+    {
+      id: "hemakuta",
+      name: "Hemakuta Hill",
+      category: "Nature",
+      x: 35,
+      y: 55,
+      description: "A sunset lover's paradise offering panoramic views of the temple ruins and boulder landscape.",
+      image: "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?auto=format&fit=crop&q=80&w=1200",
+      recommendedTours: ["Sunset Photography Hike", "Meditation on the Rocks"],
+      nearbyResort: "Heritage Resort Hampi"
+    },
+    {
+      id: "lotus",
+      name: "Lotus Mahal",
+      category: "Architecture",
+      x: 60,
+      y: 65,
+      description: "A stunning two-story structure featuring a blend of Indo-Islamic architecture in the Zenana Enclosure.",
+      image: "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?auto=format&fit=crop&q=80&w=1200",
+      recommendedTours: ["Royal Zenana Tour", "Indo-Islamic History Walk"],
+      nearbyResort: "Kishkinda Heritage Resort"
+    }
+  ]);
 });
 
 // Error Handling

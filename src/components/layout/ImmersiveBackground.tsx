@@ -6,24 +6,26 @@ interface ImmersiveBackgroundProps {
   labels?: string[];
   overlayColor?: string;
   height?: string;
+  interval?: number;
 }
 
 export function ImmersiveBackground({ 
   images, 
   labels = [], 
   overlayColor = "from-navy-950/80 via-navy-950/40 to-sand-50",
-  height = "h-[65vh]"
+  height = "h-[65vh]",
+  interval = 3000
 }: ImmersiveBackgroundProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 150]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [images.length]);
+    }, interval);
+    return () => clearInterval(timer);
+  }, [images.length, interval]);
 
   return (
     <div className={`absolute inset-0 z-0 overflow-hidden ${height}`}>

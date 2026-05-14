@@ -7,9 +7,10 @@ import { Link } from "react-router-dom";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 
 const DISCOVERY_IMAGES = [
-  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600100397608-f090747e2f9d?q=80&w=2070&auto=format&fit=crop"
+  "https://images.unsplash.com/photo-1548013146-72479768bbaa?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1581012771300-224937651c42?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1590050752117-23a9d7f28a97?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1524230652367-a7ff3337f7e7?q=80&w=2070&auto=format&fit=crop"
 ];
 
 interface POI {
@@ -89,7 +90,7 @@ export function DiscoveryPage() {
   return (
     <div className="min-h-screen bg-navy-950 overflow-hidden relative">
       {/* Cinematic Background */}
-      <ImmersiveBackground images={DISCOVERY_IMAGES} height="h-full" overlayColor="from-navy-950/90 via-navy-950/50 to-navy-950" />
+      <ImmersiveBackground images={DISCOVERY_IMAGES} height="h-full" overlayColor="from-navy-950/90 via-navy-950/50 to-navy-950" interval={3000} />
 
       <div className="container mx-auto px-4 pt-32 pb-20 relative z-20 h-screen flex flex-col">
         {/* Header */}

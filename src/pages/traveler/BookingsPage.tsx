@@ -12,9 +12,6 @@ import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as QRCode from "qrcode";
 
 
 export function BookingsPage() {
@@ -104,8 +101,21 @@ export function BookingsPage() {
   };
 
   const handleDownloadConfirmation = async (booking: Booking) => {
-    const doc = new jsPDF();
-    const safeRef = booking.referenceNumber || `HS-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
+    toast.loading("Generating your luxury itinerary...", { id: "pdf-gen" });
+    try {
+      // Dynamic imports for heavy libraries
+      const [jsPDFMod, autoTableMod, QRCodeMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+        import("qrcode")
+      ]);
+      
+      const jsPDF = jsPDFMod.jsPDF;
+      const autoTable = autoTableMod.default;
+      const QRCode = QRCodeMod;
+
+      const doc = new jsPDF();
+      const safeRef = booking.referenceNumber || `HS-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
     const issueDate = new Date().toLocaleDateString("en-GB");
     
     // Brand Colors
@@ -274,6 +284,11 @@ export function BookingsPage() {
     doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
     doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
+    toast.success("Itinerary downloaded!", { id: "pdf-gen" });
+    } catch (err) {
+      console.error("PDF Generation failed", err);
+      toast.error("Failed to generate PDF. Please try again.", { id: "pdf-gen" });
+    }
   };
 
   return (
