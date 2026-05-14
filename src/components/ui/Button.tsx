@@ -27,11 +27,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileTap={{ scale: 0.96 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        whileHover={{ 
+          y: -2, 
+          boxShadow: variant === "primary" 
+            ? "0 20px 40px -12px rgba(10, 17, 40, 0.3)" 
+            : "0 20px 40px -12px rgba(197, 160, 89, 0.3)"
+        }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 500, 
+          damping: 30,
+          mass: 0.8
+        }}
         disabled={isLoading || props.disabled}
         className={cn(
-          "inline-flex items-center justify-center rounded-full transition-all duration-500 ease-[0.16,1,0.3,1] focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-sand-50 disabled:opacity-70 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center rounded-2xl font-bold transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-sand-50 disabled:opacity-70 disabled:cursor-not-allowed",
           variants[variant],
           sizes[size],
           className
