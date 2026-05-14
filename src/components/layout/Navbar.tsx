@@ -187,7 +187,7 @@ export function Navbar() {
                       if (isAuthenticated) {
                         navigate("/resorts");
                       } else {
-                        setShowAuthModal(true, "register");
+                        navigate("/register");
                       }
                     }}
                   >
@@ -252,7 +252,7 @@ export function Navbar() {
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        setShowAuthModal(true, "login");
+                        navigate("/login");
                       }}
                       className="w-full text-center font-bold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors block text-sm"
                     >
@@ -261,7 +261,7 @@ export function Navbar() {
                     <button 
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        setShowAuthModal(true, "register");
+                        navigate("/register");
                       }}
                       className="w-full"
                     >

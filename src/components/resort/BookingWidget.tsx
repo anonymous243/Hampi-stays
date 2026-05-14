@@ -91,7 +91,7 @@ export function BookingWidget({
     if (!selectedRoomId || !checkIn || !checkOut) return;
     
     if (!isAuthenticated) {
-      setShowAuthModal(true, "register");
+      navigate("/register");
       return;
     }
     

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { MobileDock } from "./components/layout/MobileDock";
-import { AuthModal } from "./components/auth/AuthModal";
 import { CookieConsent } from "./components/layout/CookieConsent";
 
 // Public Pages
@@ -253,7 +252,6 @@ function App() {
       />
       <ScrollToTop />
       <AnimatedRoutes />
-      <AuthModal />
       <CookieConsent />
     </Router>
   );

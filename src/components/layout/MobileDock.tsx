@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Compass, Calendar, User, Search } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { motion } from "framer-motion";
@@ -6,7 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 
 export function MobileDock() {
   const location = useLocation();
-  const { user, isAuthenticated, setShowAuthModal } = useAuth();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   
   // Only show for Travelers or Unauthenticated users (public)
   const isOwner = user?.role === "RESORT_OWNER";
@@ -32,10 +33,10 @@ export function MobileDock() {
           const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
           const Icon = item.icon;
 
-          const handleClick = (e: React.MouseEvent) => {
-            if (!isAuthenticated && (item.label === "Bookings" || item.label === "Profile")) {
+          const handleClick = (e: React.MouseEvent, label: string) => {
+            if (!isAuthenticated && (label === "Bookings" || label === "Profile")) {
               e.preventDefault();
-              setShowAuthModal(true, "login");
+              navigate("/login");
             }
           };
 
@@ -43,7 +44,7 @@ export function MobileDock() {
             <Link
               key={item.path}
               to={item.path}
-              onClick={handleClick}
+              onClick={(e) => handleClick(e, item.label)}
               className="relative flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-300"
             >
               {isActive && (
