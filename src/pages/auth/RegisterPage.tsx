@@ -8,6 +8,7 @@ import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
 import { toast } from "react-hot-toast";
+import { useSystem } from "../../context/SystemContext";
 
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
@@ -17,25 +18,12 @@ export function RegisterPage() {
   const [role, setRole] = useState<UserRole>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [error, setError] = useState("");
-  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { settings } = useSystem();
+  const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/settings`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data.guideServiceEnabled !== 'undefined') {
-          setGuideServiceEnabled(data.guideServiceEnabled);
-        }
-      })
-      .catch(err => {
-        console.error("Failed to fetch settings:", err);
-        // Keep default true if fetch fails to avoid locking out guides
-        setGuideServiceEnabled(true);
-      });
-  }, []);
   
   const hampiImages = [
     "/images/auth-bg.png", // Serene Dawn Landscape
@@ -109,7 +97,7 @@ export function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: role === "owner" ? "RESORT_OWNER" : "TRAVELLER"
+          role: role === "owner" ? "RESORT_OWNER" : role === "guide" ? "GUIDE" : "TRAVELLER"
         }),
       });
       const data = await response.json();

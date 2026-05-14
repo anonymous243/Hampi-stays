@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 import { apiClient } from "../../utils/apiClient";
+import { useSystem } from "../../context/SystemContext";
 
 const EXPERT_IMAGES = [
   "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
@@ -47,18 +48,9 @@ export function LocalExpertsPage() {
   const [bookingMeetingPoint, setBookingMeetingPoint] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { settings } = useSystem();
+  const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
-  const fetchSettings = async () => {
-    try {
-      const data = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`).then(res => res.json());
-      if (data && typeof data.guideServiceEnabled !== 'undefined') {
-        setGuideServiceEnabled(data.guideServiceEnabled);
-      }
-    } catch (err) {
-      console.error("Failed to fetch settings", err);
-    }
-  };
 
   const fetchGuides = async () => {
     try {
@@ -73,7 +65,6 @@ export function LocalExpertsPage() {
   };
 
   useEffect(() => {
-    fetchSettings();
     fetchGuides();
   }, []);
 
@@ -416,6 +407,57 @@ export function LocalExpertsPage() {
             <Button onClick={() => setSearchQuery("")} variant="outline" className="rounded-2xl">Clear Search</Button>
           </div>
         )}
+      </section>
+
+      {/* Join the Network CTA */}
+      <section className="container mx-auto px-4 pb-32">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-gold-500 rounded-[3rem] p-12 md:p-20 relative overflow-hidden group shadow-2xl"
+        >
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-950/10 rounded-full blur-3xl -ml-20 -mb-20" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="max-w-2xl text-center md:text-left">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-navy-950 text-white text-[10px] font-bold uppercase tracking-widest mb-6">
+                For Local Experts
+              </span>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-6">
+                Are you a <span className="italic">Guardian</span> of Hampi's history?
+              </h2>
+              <p className="text-navy-950/70 text-lg leading-relaxed mb-8">
+                Join our elite network of storytellers. Reach a global audience of luxury travelers 
+                and share the soul of Hampi with the world.
+              </p>
+              <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-navy-950" />
+                  <span className="text-sm font-bold text-navy-950/80">Global Reach</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-navy-950" />
+                  <span className="text-sm font-bold text-navy-950/80">Flexible Schedule</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-navy-950" />
+                  <span className="text-sm font-bold text-navy-950/80">Premium Rates</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-shrink-0">
+              <Link to="/register">
+                <Button size="lg" className="h-20 px-12 rounded-[2rem] bg-navy-950 text-white text-xl font-bold shadow-2xl hover:scale-105 transition-all">
+                  Join the Network
+                  <ArrowRight className="w-6 h-6 ml-3" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Trust Banner */}

@@ -1,5 +1,5 @@
 # Cloudflare Worker for HampiStays Backend
-name = "hampistays-api"
+name = "hampistays"
 main = "server/worker.js"
 compatibility_date = "2026-05-13"
 compatibility_flags = [ "nodejs_compat" ]
@@ -19,5 +19,3 @@ RAZORPAY_KEY_SECRET = "2Td7O5zgy0OKpNexYH6CJl4D"
 
 [dev]
 port = 5000
-
-

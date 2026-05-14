@@ -89,11 +89,19 @@ app.use('/api/wishlist', wishlistRoutes);
 import * as resortController from './controllers/resortController.js';
 
 app.get('/api/stats', resortController.getStats);
-app.get('/api/settings', (req, res) => res.json({ 
-  guideServiceEnabled: true,
-  maintenanceMode: false,
-  siteName: "HampiStays"
-}));
+app.get('/api/settings', async (req, res, next) => {
+  try {
+    let settings = await prisma.systemSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.systemSettings.create({
+        data: { guideServiceEnabled: true, maintenanceMode: false }
+      });
+    }
+    res.json(settings);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Health Check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

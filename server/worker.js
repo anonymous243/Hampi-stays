@@ -78,6 +78,11 @@ app.post('/auth/register', async (c) => {
   const { name, email, password, role } = await c.req.json();
   const lowerEmail = email.toLowerCase();
   try {
+    const settings = await prisma.systemSettings.findFirst();
+    if (role === 'GUIDE' && settings && !settings.guideServiceEnabled) {
+      return c.json({ error: 'Guide registration is currently disabled by the administrator.' }, 403);
+    }
+
     const existing = await prisma.user.findUnique({ where: { email: lowerEmail } });
     if (existing) return c.json({ error: 'Email already registered' }, 400);
     const salt = await bcrypt.genSalt(12);

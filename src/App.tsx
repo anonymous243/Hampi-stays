@@ -41,6 +41,7 @@ import { InventoryPage } from "./pages/owner/InventoryPage";
 import { ScrollToTop } from "./components/shared/ScrollToTop";
 
 import { useAuth } from "./context/AuthContext";
+import { useSystem } from "./context/SystemContext";
 import { Navigate } from "react-router-dom";
 
 // Protected Route Wrapper
@@ -60,6 +61,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+// Guide Service Route Wrapper
+const GuideRoute = ({ children }: { children: React.ReactNode }) => {
+  const { settings, isLoading } = useSystem();
+  
+  if (isLoading) return null;
+  
+  if (settings && !settings.guideServiceEnabled) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 // Layout with Navbar and Footer
@@ -166,11 +180,11 @@ function AnimatedRoutes() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/experiences" element={<ExperiencesPage />} />
+            <Route path="/experiences" element={<GuideRoute><ExperiencesPage /></GuideRoute>} />
             <Route path="/about" element={<OurStoryPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/guide" element={<LocalExpertsPage />} />
-            <Route path="/discovery" element={<DiscoveryPage />} />
+            <Route path="/guide" element={<GuideRoute><LocalExpertsPage /></GuideRoute>} />
+            <Route path="/discovery" element={<GuideRoute><DiscoveryPage /></GuideRoute>} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />

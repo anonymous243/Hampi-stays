@@ -10,6 +10,7 @@ import {
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { useSystem } from "../../context/SystemContext";
 
 type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs" | "commissions";
 
@@ -22,7 +23,8 @@ export function AdminDashboard() {
   const [allGuides, setAllGuides] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { settings, updateSettings } = useSystem();
+  const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [modalData, setModalData] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,14 +99,13 @@ export function AdminDashboard() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes, reviewsRes, otpLogsRes] = await Promise.all([
+      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, payoutsRes, securityRes, reviewsRes, otpLogsRes] = await Promise.all([
         apiClient.get<any[]>('/admin/resorts/pending'),
         apiClient.get<any[]>('/admin/resorts/active'),
         apiClient.get<any[]>('/admin/users'),
         apiClient.get<any>('/admin/stats'),
         apiClient.get<any[]>('/admin/bookings/all'),
         apiClient.get<any[]>('/admin/guides'),
-        apiClient.get<any>('/settings'),
         apiClient.get<any[]>('/admin/payouts'),
         apiClient.get<any>('/admin/security/stats'),
         apiClient.get<any[]>('/admin/reviews/flagged'),
@@ -121,8 +122,7 @@ export function AdminDashboard() {
       setSecurityData(securityRes);
       setOtpLogs(otpLogsRes);
       setFlaggedReviews(reviewsRes);
-      setGuideServiceEnabled(settingsRes.guideServiceEnabled);
-      setDefaultCommissionRate(settingsRes.defaultCommissionRate || 7.0);
+      setDefaultCommissionRate(settings?.defaultCommissionRate || 7.0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -255,8 +255,7 @@ export function AdminDashboard() {
   const handleUpdateGlobalCommission = async () => {
     setIsSavingGlobalCommission(true);
     try {
-      const updated = await apiClient.post<any>('/admin/settings', { defaultCommissionRate });
-      setDefaultCommissionRate(updated.defaultCommissionRate);
+      await updateSettings({ defaultCommissionRate });
       toast.success("Global default commission rate updated successfully!");
     } catch (err) {
       console.error(err);
@@ -635,8 +634,7 @@ export function AdminDashboard() {
       onConfirm: async () => {
         setProcessingId('system-toggle');
         try {
-          const updatedSettings = await apiClient.patch<any>('/admin/settings', { guideServiceEnabled: nextStatus });
-          setGuideServiceEnabled(updatedSettings.guideServiceEnabled);
+          await updateSettings({ guideServiceEnabled: nextStatus });
           setShowConfirmModal(false);
         } catch (err: any) {
           toast.error(`Error: ${err.message || 'Could not connect to server'}`);

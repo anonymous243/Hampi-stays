@@ -5,6 +5,7 @@ import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { useSystem } from "../../context/SystemContext";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,7 +14,8 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
-  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+  const { settings } = useSystem();
+  const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,12 +37,6 @@ export function Navbar() {
     };
     
     window.addEventListener("scroll", handleScroll, { passive: true });
-
-    fetch(`${import.meta.env.VITE_API_URL}/api/settings`)
-      .then(res => res.json())
-      .then(data => setGuideServiceEnabled(data.guideServiceEnabled))
-      .catch(err => console.error(err));
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

@@ -16,6 +16,11 @@ export const register = async (req, res, next) => {
     const { password, name, role, email: rawEmail } = req.body;
     const email = rawEmail.toLowerCase();
     
+    const settings = await prisma.systemSettings.findFirst();
+    if (role === 'GUIDE' && settings && !settings.guideServiceEnabled) {
+      return res.status(403).json({ error: 'Guide registration is currently disabled by the administrator.' });
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
